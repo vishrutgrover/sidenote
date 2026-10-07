@@ -296,7 +296,7 @@ describe("MeetingMenu", () => {
     setup();
     expect(screen.queryByRole("menu")).toBeNull();
     openMenu();
-    expect(within(screen.getByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent?.trim())).toEqual(["Share", "Copy link", "Rename and people", "Delete"]);
+    expect(within(screen.getByRole("menu")).getAllByRole("menuitem").map((i) => i.textContent?.trim())).toEqual(["Share", "Copy link", "Download", "Rename and people", "Delete"]);
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("menu")).toBeNull();
     openMenu();
@@ -336,10 +336,11 @@ describe("MeetingMenu", () => {
     expect(p.onChanged).not.toHaveBeenCalled();
   });
 
-  it("renders extra items passed by the page", () => {
-    wrap(<MeetingMenu meeting={meeting()} onChanged={vi.fn()} onDeleted={vi.fn()} extra={<button role="menuitem">Download</button>} />);
+  it("Download opens the export dialog", () => {
+    setup();
     openMenu();
-    expect(screen.getByRole("menuitem", { name: "Download" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Download" }));
+    expect(screen.getByRole("dialog", { name: "Download meeting" })).toBeInTheDocument();
   });
 });
 

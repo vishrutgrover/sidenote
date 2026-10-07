@@ -76,6 +76,36 @@ describe("usePlayer without a recording (timer clock)", () => {
     expect(result.current.playing).toBe(false);
   });
 
+  it("plays a range and stops by itself at its end", () => {
+    const { result } = renderHook(() => usePlayer(60, null));
+    act(() => result.current.playRange(10, 13));
+    expect(result.current.time).toBe(10);
+    act(() => vi.advanceTimersByTime(2000));
+    expect(result.current.playing).toBe(true);
+    act(() => vi.advanceTimersByTime(1500));
+    expect(result.current.playing).toBe(false);
+    expect(result.current.time).toBeCloseTo(13, 0);
+  });
+
+  it("a range does not stop later playback: pressing play again keeps going", () => {
+    const { result } = renderHook(() => usePlayer(60, null));
+    act(() => result.current.playRange(10, 12));
+    act(() => vi.advanceTimersByTime(2500));
+    act(() => result.current.play());
+    act(() => vi.advanceTimersByTime(3000));
+    expect(result.current.playing).toBe(true);
+    expect(result.current.time).toBeGreaterThan(14);
+  });
+
+  it("seeking by hand cancels the range, so playback carries on past its old end", () => {
+    const { result } = renderHook(() => usePlayer(60, null));
+    act(() => result.current.playRange(10, 12));
+    act(() => result.current.seek(30));
+    act(() => vi.advanceTimersByTime(5000));
+    expect(result.current.playing).toBe(true);
+    expect(result.current.time).toBeCloseTo(35, 0);
+  });
+
   it("stops the timer when the page goes away", () => {
     const { result, unmount } = renderHook(() => usePlayer(60, null));
     act(() => result.current.play());
@@ -170,6 +200,17 @@ describe("usePlayer with a recording", () => {
     const { result } = renderHook(() => usePlayer(60, "/media/a.mp3"));
     instances[0].playResult = Promise.reject(new DOMException("blocked", "NotAllowedError"));
     await act(async () => result.current.play());
+    expect(result.current.playing).toBe(false);
+  });
+
+  it("with a recording, a range pauses the element at its end", () => {
+    const { result } = renderHook(() => usePlayer(60, "/media/a.mp3"));
+    act(() => result.current.playRange(5, 8));
+    expect(instances[0].currentTime).toBe(5);
+    act(() => { instances[0].currentTime = 7.9; instances[0].dispatchEvent(new Event("timeupdate")); });
+    expect(instances[0].paused).toBe(false);
+    act(() => { instances[0].currentTime = 8.1; instances[0].dispatchEvent(new Event("timeupdate")); });
+    expect(instances[0].paused).toBe(true);
     expect(result.current.playing).toBe(false);
   });
 

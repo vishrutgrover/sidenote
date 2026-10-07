@@ -65,3 +65,14 @@ describe("greeting", () => {
     expect(greeting(new Date(2026, 9, 7, hour))).toBe(out);
   });
 });
+
+import { parseClock } from "@/lib/format";
+
+describe("parseClock", () => {
+  it.each([["83", 83], ["1:23", 83], ["01:23", 83], ["01:23.5", 83.5], ["1:02:03", 3723], ["0", 0], ["  45  ", 45], ["0:07", 7]])("%j -> %s", (text, sec) => {
+    expect(parseClock(text)).toBe(sec);
+  });
+  it.each(["", "abc", "1:2:3:4", "-5", "1:-2", "1::2", ":30", "1.2.3", "12abc", "1,5"])("rejects %j", (text) => {
+    expect(parseClock(text)).toBeNull();
+  });
+});

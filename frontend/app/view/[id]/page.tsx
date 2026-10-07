@@ -1,22 +1,35 @@
 "use client";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { ChevronLeft, Search, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { AudioLines, Bookmark as BookmarkIcon, ChevronLeft, Download, MessageSquare, Search, Sparkles, Star } from "lucide-react";
+import { ExportModal } from "@/components/ExportModal";
 import { MeetingMenu } from "@/components/MeetingMenu";
 import { NotesPanel } from "@/components/NotesPanel";
 import { PlayerBar } from "@/components/PlayerBar";
+import { BookmarksPanel } from "@/components/panels/BookmarksPanel";
+import { CommentsPanel } from "@/components/panels/CommentsPanel";
+import { SoundbitesPanel, type SoundbiteDraft } from "@/components/panels/SoundbitesPanel";
 import { SmartSearch } from "@/components/SmartSearch";
+import { useToast } from "@/components/Toast";
 import { TranscriptPanel } from "@/components/TranscriptPanel";
-import { apiUrl } from "@/lib/api";
-import { dateTimeLabel, duration, initials } from "@/lib/format";
+import { api, apiUrl, send } from "@/lib/api";
+import { clock, dateTimeLabel, duration, initials } from "@/lib/format";
 import { useFetch, useHotkey } from "@/lib/hooks";
-import type { ActionItem, Insights, Meeting, Segment } from "@/lib/types";
+import type { ActionItem, Bookmark, Insights, Meeting, Segment } from "@/lib/types";
 import { usePlayer } from "@/lib/usePlayer";
 import styles from "./view.module.css";
 
 /** True when a key press is meant for a form control, so page shortcuts must stay out of the way. */
 const typingIn = (e: KeyboardEvent) => e.target instanceof HTMLElement && (["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(e.target.tagName) || e.target.isContentEditable);
+
+type Panel = "search" | "soundbites" | "comments" | "bookmarks";
+const RAIL: { id: Panel; label: string; icon: typeof Search }[] = [
+  { id: "search", label: "Smart Search", icon: Search },
+  { id: "soundbites", label: "Soundbites", icon: AudioLines },
+  { id: "comments", label: "Comments", icon: MessageSquare },
+  { id: "bookmarks", label: "Bookmarks", icon: BookmarkIcon },
+];
 
 export default function MeetingPage() {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +48,13 @@ export default function MeetingPage() {
     reloadLines();
     itemsChanged();
   };
-  const [panel, setPanel] = useState<"search" | null>("search");
+  const { data: bookmarks = [], reload: reloadBookmarks } = useFetch<Bookmark[]>(`/api/meetings/${id}/bookmarks`);
+  const toast = useToast();
+  const [panel, setPanel] = useState<Panel | null>("search");
+  const [commentTarget, setCommentTarget] = useState<number | null>(null);
+  const [draft, setDraft] = useState<SoundbiteDraft | null>(null);
+  const draftCount = useRef(0);
+  const [exporting, setExporting] = useState(false);
   const player = usePlayer(meeting?.duration_sec ?? 0, meeting?.media_url ? apiUrl(meeting.media_url) : null);
 
   // a freshly uploaded meeting is still being processed: check again until it is ready
@@ -48,6 +67,16 @@ export default function MeetingPage() {
   useHotkey((e) => e.code === "Space" && !e.metaKey && !e.ctrlKey && !typingIn(e), player.toggle);
   useHotkey((e) => e.key === "ArrowLeft" && !e.metaKey && !e.ctrlKey && !typingIn(e), () => player.skip(-5));
   useHotkey((e) => e.key === "ArrowRight" && !e.metaKey && !e.ctrlKey && !typingIn(e), () => player.skip(5));
+
+  async function bookmarkNow() {
+    try {
+      await api(`/api/meetings/${id}/bookmarks`, send("POST", { time_sec: player.time }));
+      reloadBookmarks();
+      toast(`Bookmarked ${clock(player.time)}`);
+    } catch (e) {
+      toast((e as Error).message, "error");
+    }
+  }
 
   if (error && !meeting) {
     return (
@@ -75,14 +104,23 @@ export default function MeetingPage() {
 
       <div className={`${styles.body} ${panel ? styles.withPanel : ""}`}>
         <nav className={styles.rail} aria-label="Meeting tools">
-          <button className={panel === "search" ? styles.railOn : ""} onClick={() => setPanel(panel === "search" ? null : "search")} aria-label="Smart Search" aria-pressed={panel === "search"} title="Smart Search">
-            <Search size={18} />
-          </button>
+          {RAIL.map(({ id: key, label, icon: Icon }) => (
+            <button key={key} className={panel === key ? styles.railOn : ""} onClick={() => setPanel(panel === key ? null : key)} aria-label={label} aria-pressed={panel === key} title={label}>
+              <Icon size={18} />
+            </button>
+          ))}
         </nav>
-        {panel === "search" && meeting && (
-          <aside className={styles.left} aria-label="Smart Search">
-            <h2>Smart Search</h2>
-            <SmartSearch meeting={meeting} lines={lines} insights={insights} tasks={items} onSeek={(t) => player.seek(t)} onTagsChanged={reload} />
+        {panel && meeting && (
+          <aside className={styles.left} aria-label={RAIL.find((r) => r.id === panel)!.label}>
+            {panel === "search" && (
+              <>
+                <h2>Smart Search</h2>
+                <SmartSearch meeting={meeting} lines={lines} insights={insights} tasks={items} onSeek={(t) => player.seek(t)} onTagsChanged={reload} />
+              </>
+            )}
+            {panel === "soundbites" && <SoundbitesPanel meetingId={meeting.id} duration={player.duration} time={player.time} draft={draft} onDraftDone={() => setDraft(null)} onPlay={player.playRange} onSeek={player.seek} />}
+            {panel === "comments" && <CommentsPanel meetingId={meeting.id} lines={lines} time={player.time} target={commentTarget} onTargetChange={setCommentTarget} onSeek={player.seek} onChanged={reloadLines} />}
+            {panel === "bookmarks" && <BookmarksPanel meetingId={meeting.id} bookmarks={bookmarks} time={player.time} onSeek={player.seek} onChanged={reloadBookmarks} />}
           </aside>
         )}
         <section className={styles.center}>
@@ -119,11 +157,19 @@ export default function MeetingPage() {
 
         <aside className={styles.right} aria-label="Transcript">
           <div className={styles.tabs}><span className={styles.tab}>Transcript</span></div>
-          {meeting && <TranscriptPanel meetingId={meeting.id} lines={lines} loading={linesLoading} error={linesError} player={player} />}
+          {meeting && <TranscriptPanel
+              meetingId={meeting.id} lines={lines} loading={linesLoading} error={linesError} player={player}
+              onComment={(segmentId) => { setCommentTarget(segmentId); setPanel("comments"); }}
+              onSoundbite={(start, end) => { setDraft({ id: ++draftCount.current, start, end }); setPanel("soundbites"); }}
+            />}
         </aside>
       </div>
 
-      <PlayerBar player={player} />
+      <PlayerBar player={player}>
+        <button className="btn btn-ghost btn-icon" onClick={bookmarkNow} aria-label="Bookmark this moment" title="Bookmark this moment"><Star size={18} /></button>
+        <button className="btn btn-ghost btn-icon" onClick={() => setExporting(true)} aria-label="Download" title="Download"><Download size={18} /></button>
+      </PlayerBar>
+      {meeting && <ExportModal meetingId={meeting.id} open={exporting} onClose={() => setExporting(false)} />}
     </div>
   );
 }

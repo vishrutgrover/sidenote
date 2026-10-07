@@ -13,6 +13,8 @@ export type Player = {
   toggle: () => void;
   seek: (sec: number) => void;
   skip: (delta: number) => void;
+  /** Play from `start` and stop by itself at `end` (for soundbites). */
+  playRange: (start: number, end: number) => void;
   setSpeed: (speed: number) => void;
 };
 
@@ -29,6 +31,7 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
   const audio = useRef<HTMLAudioElement | null>(null);
   const clock = useRef(0); // the current time while no audio element exists
   const speedRef = useRef(1);
+  const stopAt = useRef<number | null>(null); // set while playing a range
   const duration = mediaUrl && mediaDuration ? mediaDuration : durationSec;
 
   useEffect(() => {
@@ -36,7 +39,13 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
     const a = new Audio(mediaUrl);
     a.preload = "metadata";
     a.playbackRate = speedRef.current;
-    a.addEventListener("timeupdate", () => setTime(a.currentTime));
+    a.addEventListener("timeupdate", () => {
+      setTime(a.currentTime);
+      if (stopAt.current !== null && a.currentTime >= stopAt.current) {
+        stopAt.current = null;
+        a.pause();
+      }
+    });
     a.addEventListener("loadedmetadata", () => Number.isFinite(a.duration) && setMediaDuration(a.duration));
     a.addEventListener("play", () => setPlaying(true));
     a.addEventListener("pause", () => setPlaying(false));
@@ -55,13 +64,17 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
       const next = Math.min(clock.current + 0.1 * speed, durationSec);
       clock.current = next;
       setTime(next);
-      if (next >= durationSec) setPlaying(false);
+      if (next >= durationSec || (stopAt.current !== null && next >= stopAt.current)) {
+        stopAt.current = null;
+        setPlaying(false);
+      }
     }, 100);
     return () => clearInterval(id);
   }, [mediaUrl, playing, speed, durationSec]);
 
   const seek = useCallback(
     (sec: number) => {
+      stopAt.current = null; // moving by hand cancels a range
       const t = Math.min(Math.max(Number.isFinite(sec) ? sec : 0, 0), duration);
       if (audio.current) audio.current.currentTime = t;
       clock.current = t;
@@ -76,9 +89,21 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
     else setPlaying(true);
   }, [duration, seek]);
 
-  const pause = useCallback(() => (audio.current ? audio.current.pause() : setPlaying(false)), []);
+  const pause = useCallback(() => {
+    stopAt.current = null;
+    return audio.current ? audio.current.pause() : setPlaying(false);
+  }, []);
   const toggle = useCallback(() => (playing ? pause() : play()), [playing, play, pause]);
   const skip = useCallback((delta: number) => seek(clock.current + delta), [seek]);
+
+  const playRange = useCallback(
+    (start: number, end: number) => {
+      seek(start);
+      stopAt.current = end; // after seek, which clears it
+      play();
+    },
+    [seek, play],
+  );
 
   const setSpeed = useCallback((s: number) => {
     speedRef.current = s;
@@ -86,5 +111,5 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
     setSpeedState(s);
   }, []);
 
-  return { time, duration, playing, speed, play, pause, toggle, seek, skip, setSpeed };
+  return { time, duration, playing, speed, play, pause, toggle, seek, skip, playRange, setSpeed };
 }

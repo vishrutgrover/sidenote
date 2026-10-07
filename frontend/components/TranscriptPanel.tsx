@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownToLine, ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { ArrowDownToLine, ChevronDown, ChevronUp, MessageSquare, Scissors, Search, X } from "lucide-react";
 import { clock } from "@/lib/format";
 import { useDebounced, useFetch } from "@/lib/hooks";
 import { activeIndex, highlightPieces, startsNewSpeaker } from "@/lib/transcript";
@@ -9,7 +9,9 @@ import type { Player } from "@/lib/usePlayer";
 import styles from "./TranscriptPanel.module.css";
 
 /** The transcript with a find bar. Click a line to jump there; the line being spoken follows playback. */
-export function TranscriptPanel({ meetingId, lines, loading, error, player }: { meetingId: number; lines: Segment[]; loading: boolean; error?: string; player: Player }) {
+type Props = { meetingId: number; lines: Segment[]; loading: boolean; error?: string; player: Player; onComment?: (segmentId: number) => void; onSoundbite?: (start: number, end: number) => void };
+
+export function TranscriptPanel({ meetingId, lines, loading, error, player, onComment, onSoundbite }: Props) {
   const base = `/api/meetings/${meetingId}/transcript`;
 
   const [find, setFind] = useState("");
@@ -82,6 +84,15 @@ export function TranscriptPanel({ meetingId, lines, loading, error, player }: { 
               <span className={styles.stamp}>{clock(l.start_sec)}</span>
               {highlightPieces(l.text, hitIds.has(l.id) ? q : "").map((p, k) => (p.hit ? <mark key={k}>{p.text}</mark> : p.text))}
             </button>
+            <div className={styles.lineActions}>
+              {l.comment_count > 0 && onComment && (
+                <button className={styles.badge} onClick={() => onComment(l.id)} aria-label={`${l.comment_count} comment${l.comment_count > 1 ? "s" : ""}, open`}>
+                  <MessageSquare size={12} /> {l.comment_count}
+                </button>
+              )}
+              {onComment && <button onClick={() => onComment(l.id)} aria-label={`Comment on ${clock(l.start_sec)}`} title="Comment on this line"><MessageSquare size={14} /></button>}
+              {onSoundbite && <button onClick={() => onSoundbite(l.start_sec, l.end_sec)} aria-label={`Make a soundbite from ${clock(l.start_sec)}`} title="Make a soundbite from this line"><Scissors size={14} /></button>}
+            </div>
           </div>
         ))}
       </div>

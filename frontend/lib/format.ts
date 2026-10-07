@@ -47,3 +47,10 @@ export function greeting(now = new Date()): string {
   const h = now.getHours();
   return h < 5 ? "Good Night" : h < 12 ? "Good Morning" : h < 17 ? "Good Afternoon" : h < 21 ? "Good Evening" : "Good Night";
 }
+
+/** What a person types for a time: "83", "1:23", "01:23.5" or "1:02:03". Returns null if it is not a time. */
+export function parseClock(text: string): number | null {
+  const parts = text.trim().split(":");
+  if (parts.length > 3 || parts.some((p) => !/^\d+(\.\d+)?$/.test(p))) return null;
+  return parts.reduce((total, p) => total * 60 + Number(p), 0);
+}

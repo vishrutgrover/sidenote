@@ -1,0 +1,57 @@
+.form {
+  display: grid;
+  gap: 14px;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--bg-muted);
+}
+.tabs button {
+  flex: 1;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+.tabs .on {
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 500;
+}
+.formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.formats button {
+  min-width: 56px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.formats .picked {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 500;
+}
+.form label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form input[type="checkbox"] {
+  accent-color: var(--primary);
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
