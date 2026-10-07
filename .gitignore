@@ -9,3 +9,6 @@ __pycache__/
 refimgs/
 test-results/
 playwright-report/
+
+# private study notes (kept on disk, never committed)
+study/

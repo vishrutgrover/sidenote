@@ -32,7 +32,7 @@ run:                 ## backend on :8000 (uses backend/.env if it exists)
 run-frontend:        ## frontend on :3000
 	cd frontend && npm run dev
 
-# ---- generated files (see docs/GENERATED.md) ----
+# ---- generated files ----
 screenshots:         ## redraw docs/media/*.png from the running app (start both servers first)
 	cd frontend && node scripts/readme-screenshots.mjs ../docs/media
 

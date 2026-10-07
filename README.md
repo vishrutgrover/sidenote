@@ -162,4 +162,4 @@ backend/   FastAPI · SQLAlchemy · SQLite     frontend/   Next.js (App Router) 
   tests/        unit + integration           docs/         EXPLAINED.md, screenshots
 ```
 
-Learning the code? Start with **[docs/EXPLAINED.md](docs/EXPLAINED.md)** (design decisions in plain words), then **[docs/CODE_TOUR.md](docs/CODE_TOUR.md)** (every file, three requests traced end to end, the tricky parts line by line). **[docs/GENERATED.md](docs/GENERATED.md)** lists every generated file with the command that made it, and **[docs/CHECKLIST.md](docs/CHECKLIST.md)** maps each requirement of the brief to its code and its test.
+Want the reasoning behind the design? **[docs/EXPLAINED.md](docs/EXPLAINED.md)** walks through it in plain words.
