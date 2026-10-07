@@ -1,0 +1,143 @@
+.page {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 24px 24px 60px;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  margin-bottom: 20px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+  color: var(--faint);
+}
+.search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  outline: 0;
+}
+.grid {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.person {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+.person:hover {
+  background: var(--bg-subtle);
+}
+.person > span:nth-child(2) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.count {
+  white-space: nowrap;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.header h2 {
+  font-size: 22px;
+  font-weight: 550;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stats .card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 18px;
+}
+.stats strong {
+  font-size: 22px;
+  font-weight: 550;
+}
+.page section h3 {
+  margin: 24px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.list li > a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 8px;
+  border-radius: var(--radius);
+}
+.list li > a:hover {
+  background: var(--bg-subtle);
+}
+.list li > a > span:first-child {
+  display: flex;
+  flex-direction: column;
+}
+.share {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.bar {
+  width: 90px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--bg-muted);
+}
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+.task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 2px 8px;
+}
+.task input {
+  accent-color: var(--primary);
+}
+.task > span {
+  flex: 1;
+}
+.done {
+  color: var(--faint);
+  text-decoration: line-through;
+}

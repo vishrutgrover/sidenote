@@ -76,3 +76,22 @@ describe("parseClock", () => {
     expect(parseClock(text)).toBeNull();
   });
 });
+
+import { talkTime } from "@/lib/format";
+
+describe("talkTime", () => {
+  it.each([[0, "0 s"], [44.6, "45 s"], [59.4, "59 s"], [60, "1 min"], [125, "2 min 5 s"], [3599, "59 min 59 s"], [3600, "1 h"], [3725, "1 h 2 min"], [-5, "0 s"]])("%s -> %s", (sec, out) => {
+    expect(talkTime(sec)).toBe(out);
+  });
+});
+
+import { avatarColor } from "@/lib/format";
+
+describe("avatarColor", () => {
+  it("gives the same person the same colour, and spreads people across colours", () => {
+    expect(avatarColor(3)).toBe(avatarColor(3));
+    expect(new Set([0, 1, 2, 3, 4, 5].map(avatarColor)).size).toBe(6);
+    expect(avatarColor(6)).toBe(avatarColor(0)); // wraps around
+    expect(avatarColor(-1)).toMatch(/^#/); // never undefined
+  });
+});

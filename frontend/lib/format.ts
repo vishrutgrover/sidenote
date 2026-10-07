@@ -54,3 +54,15 @@ export function parseClock(text: string): number | null {
   if (parts.length > 3 || parts.some((p) => !/^\d+(\.\d+)?$/.test(p))) return null;
   return parts.reduce((total, p) => total * 60 + Number(p), 0);
 }
+
+/** Speaking time: 45 -> "45 s", 125 -> "2 min 5 s", 3725 -> "1 h 2 min". */
+export function talkTime(sec: number): string {
+  const s = Math.max(0, Math.round(sec));
+  if (s < 60) return `${s} s`;
+  if (s < 3600) return `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ""}`;
+  return `${Math.floor(s / 3600)} h${Math.floor((s % 3600) / 60) ? ` ${Math.floor((s % 3600) / 60)} min` : ""}`;
+}
+
+const AVATAR_COLORS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#E84393", "#FDCB6E"];
+/** A steady colour per person, for their avatar. */
+export const avatarColor = (id: number) => AVATAR_COLORS[Math.abs(id) % AVATAR_COLORS.length];

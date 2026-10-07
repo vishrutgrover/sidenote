@@ -149,7 +149,7 @@ export default function MeetingPage() {
                 {host?.name} · {dateTimeLabel(meeting.started_at)} · {duration(meeting.duration_sec)}
               </div>
               <div className={styles.people}>
-                {meeting.participants.map((p) => <span key={p.id} className="chip">{p.name}</span>)}
+                {meeting.participants.map((p) => <Link key={p.id} href={`/people/${p.person_id}`} className="chip" title={`See ${p.name}'s profile`}>{p.name}</Link>)}
               </div>
 
               {meeting.status === "processing" ? (
