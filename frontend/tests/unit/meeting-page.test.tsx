@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MeetingPage from "@/app/view/[id]/page";
 import { ToastProvider } from "@/components/Toast";
-import { insights, items, meeting, mockApi, summary, topics, transcript } from "./helpers/fixtures";
+import { bookmarks, comments, insights, items, meeting, mockApi, soundbites, summary, topics, transcript } from "./helpers/fixtures";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "1" }), useRouter: () => ({ push }) }));
@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-const extras = { "/api/meetings/1/summary": summary, "/api/meetings/1/action-items": items, "/api/meetings/1/insights": insights, "/api/topics": topics };
+const extras = { "/api/meetings/1/summary": summary, "/api/meetings/1/action-items": items, "/api/meetings/1/insights": insights, "/api/topics": topics, "/api/meetings/1/bookmarks": bookmarks, "/api/meetings/1/comments": comments, "/api/meetings/1/soundbites": soundbites };
 const api = (m = meeting()) => mockApi({ ...extras, "/api/meetings/1/transcript": transcript, "/api/meetings/1": m });
 const time = () => screen.getByLabelText("Time").textContent;
 
@@ -47,6 +47,60 @@ describe("Meeting page", () => {
     expect(screen.queryByRole("heading", { name: "Smart Search" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Smart Search" }));
     expect(await screen.findByRole("heading", { name: "Smart Search" })).toBeInTheDocument();
+  });
+
+  it("the rail switches between Smart Search, Soundbites, Comments and Bookmarks", async () => {
+    api();
+    render(<MeetingPage />);
+    await screen.findByRole("heading", { name: "Smart Search" });
+    fireEvent.click(screen.getByRole("button", { name: "Soundbites" }));
+    expect(await screen.findByText("Soundbites · 2")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Smart Search" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Comments" }));
+    expect(await screen.findByText("Comments · 2")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Bookmarks" }));
+    expect(await screen.findByText("Bookmarks · 2")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Bookmarks" })); // pressing the active one hides the panel
+    expect(screen.queryByText("Bookmarks · 2")).toBeNull();
+  });
+
+  it("the scissors on a line opens Soundbites with that line's times filled in", async () => {
+    api();
+    render(<MeetingPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Make a soundbite from 00:20" }));
+    expect(await screen.findByLabelText("Start time")).toHaveValue("00:20");
+    expect(screen.getByLabelText("End time")).toHaveValue("00:25");
+  });
+
+  it("the soundbite form from a line goes away once it is cancelled", async () => {
+    api();
+    render(<MeetingPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Make a soundbite from 00:20" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    expect(screen.queryByLabelText("Start time")).toBeNull();
+  });
+
+  it("the comment button on a line opens Comments aimed at that line", async () => {
+    api();
+    render(<MeetingPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Comment on 00:30" }));
+    expect(await screen.findByLabelText("Commenting on")).toHaveTextContent("00:30");
+  });
+
+  it("the star bookmarks the current time", async () => {
+    const calls = mockApi({ ...extras, "/api/meetings/1/transcript": transcript, "/api/meetings/1": () => meeting() });
+    render(<ToastProvider><MeetingPage /></ToastProvider>);
+    fireEvent.click(await screen.findByText(/I agree, the launch date/)); // 00:20
+    fireEvent.click(screen.getByRole("button", { name: "Bookmark this moment" }));
+    expect(await screen.findByText("Bookmarked 00:20")).toBeInTheDocument();
+    expect(calls.requests!.find((r) => r.method === "POST" && r.path.endsWith("/bookmarks"))).toMatchObject({ body: { time_sec: 20 } });
+  });
+
+  it("the download button opens the export dialog", async () => {
+    api();
+    render(<MeetingPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Download" }));
+    expect(screen.getByRole("dialog", { name: "Download meeting" })).toBeInTheDocument();
   });
 
   it("ticking a task refreshes both the list and the Smart Search numbers", async () => {

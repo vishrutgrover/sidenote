@@ -52,7 +52,7 @@ export const transcript: Segment[] = [
 
 export const fakePlayer = (over: Partial<Player> = {}): Player => ({
   time: 0, duration: 60, playing: false, speed: 1,
-  play: vi.fn(), pause: vi.fn(), toggle: vi.fn(), seek: vi.fn(), skip: vi.fn(), setSpeed: vi.fn(), ...over,
+  play: vi.fn(), pause: vi.fn(), toggle: vi.fn(), seek: vi.fn(), skip: vi.fn(), playRange: vi.fn(), setSpeed: vi.fn(), ...over,
 });
 
 
@@ -86,3 +86,15 @@ export const insights: Insights = {
   ],
   filters: { questions: [2], metrics: [], dates_times: [4, 5], tasks: [1, 2] },
 };
+
+import type { Bookmark, Comment, Soundbite } from "@/lib/types";
+
+export const soundbites: Soundbite[] = [
+  { id: 1, start_sec: 4, end_sec: 18, title: "Welcome overview", excerpt: "Thanks for joining everyone.", created_at: "2026-10-07T18:00:00" },
+  { id: 2, start_sec: 65, end_sec: 70, title: "The decision", excerpt: "", created_at: "2026-10-07T18:05:00" },
+];
+export const comments: Comment[] = [
+  { id: 1, segment_id: 2, start_sec: 10, quote: "First, the budget is tight this quarter.", author: "Vishrut Grover", body: "Can we get numbers?", created_at: "2026-10-07T18:10:00" },
+  { id: 2, segment_id: 4, start_sec: 30, quote: "x".repeat(120), author: "Maya Chen", body: "Agreed.", created_at: "2026-10-07T18:11:00" },
+];
+export const bookmarks: Bookmark[] = [{ id: 1, time_sec: 42, note: "revisit this", created_at: "2026-10-07T18:00:00" }, { id: 2, time_sec: 90, note: "", created_at: "2026-10-07T18:01:00" }];
