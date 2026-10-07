@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MeetingPage from "@/app/view/[id]/page";
 import { ToastProvider } from "@/components/Toast";
-import { bookmarks, comments, insights, items, meeting, mockApi, soundbites, summary, topics, transcript } from "./helpers/fixtures";
+import { bookmarks, comments, insights, items, llm, meeting, mockApi, soundbites, summary, topics, transcript } from "./helpers/fixtures";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "1" }), useRouter: () => ({ push }) }));
@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-const extras = { "/api/meetings/1/summary": summary, "/api/meetings/1/action-items": items, "/api/meetings/1/insights": insights, "/api/topics": topics, "/api/meetings/1/bookmarks": bookmarks, "/api/meetings/1/comments": comments, "/api/meetings/1/soundbites": soundbites };
+const extras = { "/api/meetings/1/summary": summary, "/api/meetings/1/action-items": items, "/api/meetings/1/insights": insights, "/api/topics": topics, "/api/meetings/1/bookmarks": bookmarks, "/api/meetings/1/comments": comments, "/api/meetings/1/soundbites": soundbites, "/api/meetings/1/chat": [], "/api/llm/models": llm };
 const api = (m = meeting()) => mockApi({ ...extras, "/api/meetings/1/transcript": transcript, "/api/meetings/1": m });
 const time = () => screen.getByLabelText("Time").textContent;
 
@@ -85,6 +85,36 @@ describe("Meeting page", () => {
     render(<MeetingPage />);
     fireEvent.click(await screen.findByRole("button", { name: "Comment on 00:30" }));
     expect(await screen.findByLabelText("Commenting on")).toHaveTextContent("00:30");
+  });
+
+  it("the right-hand tabs switch between the transcript and Ask Sidenote without losing the search", async () => {
+    api();
+    render(<MeetingPage />);
+    fireEvent.change(await screen.findByLabelText("Find in transcript"), { target: { value: "budget" } });
+    expect(screen.getByRole("tab", { name: "Transcript" })).toHaveAttribute("aria-selected", "true");
+    fireEvent.click(screen.getByRole("tab", { name: "Ask Sidenote" }));
+    expect(await screen.findByText("Ask anything about this meeting")).toBeVisible();
+    expect(screen.getByLabelText("Find in transcript")).not.toBeVisible(); // hidden, not thrown away
+    fireEvent.click(screen.getByRole("tab", { name: "Transcript" }));
+    expect(screen.getByLabelText("Find in transcript")).toHaveValue("budget");
+  });
+
+  it("a ?t= link opens the meeting at that moment", async () => {
+    history.replaceState(null, "", "/view/1?t=75");
+    api();
+    render(<MeetingPage />);
+    await screen.findByText(/Welcome everyone/);
+    await waitFor(() => expect(time()).toContain("01:15"));
+    history.replaceState(null, "", "/");
+  });
+
+  it("ignores a missing or nonsense ?t=", async () => {
+    history.replaceState(null, "", "/view/1?t=abc");
+    api();
+    render(<MeetingPage />);
+    await screen.findByText(/Welcome everyone/);
+    expect(time()).toContain("00:00");
+    history.replaceState(null, "", "/");
   });
 
   it("the star bookmarks the current time", async () => {

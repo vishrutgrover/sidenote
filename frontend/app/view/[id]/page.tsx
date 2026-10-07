@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AudioLines, Bookmark as BookmarkIcon, ChevronLeft, Download, MessageSquare, Search, Sparkles, Star } from "lucide-react";
+import { AskPanel } from "@/components/AskPanel";
 import { ExportModal } from "@/components/ExportModal";
 import { MeetingMenu } from "@/components/MeetingMenu";
 import { NotesPanel } from "@/components/NotesPanel";
@@ -55,6 +56,7 @@ export default function MeetingPage() {
   const [draft, setDraft] = useState<SoundbiteDraft | null>(null);
   const draftCount = useRef(0);
   const [exporting, setExporting] = useState(false);
+  const [tab, setTab] = useState<"ask" | "transcript">("transcript");
   const player = usePlayer(meeting?.duration_sec ?? 0, meeting?.media_url ? apiUrl(meeting.media_url) : null);
 
   // a freshly uploaded meeting is still being processed: check again until it is ready
@@ -63,6 +65,16 @@ export default function MeetingPage() {
     const timer = setInterval(reload, 2000);
     return () => clearInterval(timer);
   }, [meeting?.status, reload]);
+
+  // a link like /view/3?t=125 (from a search result or an answer) opens the meeting at that moment
+  const meetingId = meeting?.id;
+  useEffect(() => {
+    if (meetingId === undefined) return;
+    const t = Number(new URLSearchParams(location.search).get("t"));
+    if (t > 0) player.seek(t);
+    // only when the meeting first loads, not whenever the player changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meetingId]);
 
   useHotkey((e) => e.code === "Space" && !e.metaKey && !e.ctrlKey && !typingIn(e), player.toggle);
   useHotkey((e) => e.key === "ArrowLeft" && !e.metaKey && !e.ctrlKey && !typingIn(e), () => player.skip(-5));
@@ -156,12 +168,17 @@ export default function MeetingPage() {
         </section>
 
         <aside className={styles.right} aria-label="Transcript">
-          <div className={styles.tabs}><span className={styles.tab}>Transcript</span></div>
-          {meeting && <TranscriptPanel
+          <div className={styles.tabs} role="tablist">
+            {([["ask", "Ask Sidenote"], ["transcript", "Transcript"]] as const).map(([key, label]) => (
+              <button key={key} role="tab" aria-selected={tab === key} className={tab === key ? styles.tab : styles.tabIdle} onClick={() => setTab(key)}>{label}</button>
+            ))}
+          </div>
+          {meeting && <div className={styles.tabBody} hidden={tab !== "ask"}><AskPanel meetingId={meeting.id} onSeek={player.seek} /></div>}
+          {meeting && <div className={styles.tabBody} hidden={tab !== "transcript"}><TranscriptPanel
               meetingId={meeting.id} lines={lines} loading={linesLoading} error={linesError} player={player}
               onComment={(segmentId) => { setCommentTarget(segmentId); setPanel("comments"); }}
               onSoundbite={(start, end) => { setDraft({ id: ++draftCount.current, start, end }); setPanel("soundbites"); }}
-            />}
+            /></div>}
         </aside>
       </div>
 

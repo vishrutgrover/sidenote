@@ -15,7 +15,7 @@ export const people: Person[] = [
 ];
 export const topics: Topic[] = [{ name: "product", meeting_count: 2 }, { name: "hiring", meeting_count: 1 }];
 
-type Handler = unknown | ((url: string) => unknown | Response);
+type Handler = unknown | ((url: string, init?: RequestInit) => unknown | Response);
 
 /** Replace fetch with canned answers. Keys are matched against the start of the path; returns the list of requested paths. */
 export function mockApi(routes: Record<string, Handler>) {
@@ -29,7 +29,7 @@ export function mockApi(routes: Record<string, Handler>) {
     const key = Object.keys(routes).sort((a, b) => b.length - a.length).find((k) => path.startsWith(k));
     if (!key) return new Response(JSON.stringify({ detail: `no mock for ${path}` }), { status: 404 });
     const value = routes[key];
-    const result = await (typeof value === "function" ? (value as (u: string) => unknown)(path) : value);
+    const result = await (typeof value === "function" ? (value as (u: string, i?: RequestInit) => unknown)(path, init) : value);
     return result instanceof Response ? result : new Response(JSON.stringify(result));
   });
   return calls;
@@ -98,3 +98,12 @@ export const comments: Comment[] = [
   { id: 2, segment_id: 4, start_sec: 30, quote: "x".repeat(120), author: "Maya Chen", body: "Agreed.", created_at: "2026-10-07T18:11:00" },
 ];
 export const bookmarks: Bookmark[] = [{ id: 1, time_sec: 42, note: "revisit this", created_at: "2026-10-07T18:00:00" }, { id: 2, time_sec: 90, note: "", created_at: "2026-10-07T18:01:00" }];
+
+import type { ChatMessage, LlmModels } from "@/lib/types";
+
+export const llm: LlmModels = {
+  default_provider: "mock", default_model: "heuristic",
+  providers: [{ name: "anthropic", label: "Anthropic", models: ["claude-sonnet-5-5", "claude-opus-5-5"] }, { name: "mock", label: "Built-in (no API key)", models: ["heuristic"] }],
+};
+export const userMsg = (id: number, content: string, meeting_id: number | null = 1): ChatMessage => ({ id, meeting_id, role: "user", content, sources: [], provider: null, model: null, created_at: "2026-10-07T18:00:00" });
+export const botMsg = (id: number, content: string, over: Partial<ChatMessage> = {}): ChatMessage => ({ id, meeting_id: 1, role: "assistant", content, sources: [], provider: "mock", model: "heuristic", created_at: "2026-10-07T18:00:01", ...over });

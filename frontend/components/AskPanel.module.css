@@ -1,0 +1,158 @@
+.panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.messages {
+  flex: 1;
+  min-height: 0;
+  padding: 16px;
+  overflow-y: auto;
+}
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 40px 4px 8px;
+}
+.welcome h2 {
+  font-size: 18px;
+  font-weight: 550;
+}
+.chips {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.chips button {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+  text-align: left;
+}
+.chips button:hover {
+  background: var(--bg-muted);
+}
+.user {
+  width: fit-content;
+  max-width: 90%;
+  margin: 12px 0 12px auto;
+  padding: 8px 14px;
+  border-radius: 14px 14px 4px 14px;
+  background: var(--primary-soft);
+  color: var(--ink);
+}
+.bot {
+  margin: 12px 0;
+}
+.who {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-weight: 550;
+}
+.who .muted {
+  font-size: 12px;
+  font-weight: 400;
+}
+.answer {
+  line-height: 1.65;
+}
+.answer p,
+.answer li {
+  margin: 0 0 6px;
+}
+.answer li {
+  margin-left: 20px;
+  list-style: disc;
+}
+.cite {
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sources .chip {
+  border: 0;
+  cursor: pointer;
+}
+.copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.copy:hover {
+  color: var(--ink);
+}
+.composer {
+  margin: 0 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+.composer:focus-within {
+  border-color: var(--primary);
+}
+.composer textarea {
+  width: 100%;
+  padding: 12px 14px 4px;
+  border: 0;
+  background: transparent;
+  outline: 0;
+  resize: none;
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 8px 12px;
+}
+.bar select {
+  max-width: 200px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+}
+.send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
