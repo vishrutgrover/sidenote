@@ -1,0 +1,78 @@
+.page {
+  width: min(860px, 100%);
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--bg-muted);
+}
+.tabs button {
+  height: 30px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+.tabs .on {
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 500;
+}
+.count {
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+.group {
+  margin-bottom: 20px;
+}
+.group h2 {
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.group h2 a:hover {
+  color: var(--primary);
+}
+.group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+}
+.row:hover {
+  background: var(--bg-subtle);
+}
+.row input {
+  accent-color: var(--primary);
+}
+.text {
+  flex: 1;
+  min-width: 0;
+}
+.done .text {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+.stamp {
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}

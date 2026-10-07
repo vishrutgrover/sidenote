@@ -4,6 +4,7 @@ import { Plus, Sparkles, Trash2 } from "lucide-react";
 import { api, send } from "@/lib/api";
 import { clock } from "@/lib/format";
 import { groupByAssignee, openCount } from "@/lib/notes";
+import { useTicks } from "@/lib/useTicks";
 import type { ActionItem, Participant } from "@/lib/types";
 import { useToast } from "./Toast";
 import styles from "./ActionItems.module.css";
@@ -16,10 +17,7 @@ export function ActionItems({ meetingId, items, participants, onSeek, onChange }
   const [editing, setEditing] = useState<{ id: number; text: string } | null>(null);
   const [text, setText] = useState("");
   const [assignee, setAssignee] = useState("");
-  // A tick shows at once. It is tied to the exact list it was made on, so as soon as the list is
-  // reloaded (a new array) the server's answer takes over and the tick is forgotten.
-  const [ticks, setTicks] = useState<Record<number, { value: boolean; list: ActionItem[] }>>({});
-  const isDone = (i: ActionItem) => (ticks[i.id]?.list === items ? ticks[i.id].value : i.is_done);
+  const { isDone, toggle } = useTicks(items);
 
   async function run(request: Promise<unknown>) {
     try {
@@ -32,19 +30,6 @@ export function ActionItems({ meetingId, items, participants, onSeek, onChange }
     }
   }
   const patch = (id: number, body: object) => run(api(`/api/action-items/${id}`, send("PATCH", body)));
-
-  async function toggle(item: ActionItem) {
-    const value = !isDone(item);
-    setTicks((t) => ({ ...t, [item.id]: { value, list: items } }));
-    if (!(await patch(item.id, { is_done: value }))) {
-      // save failed: put it back
-      setTicks((t) => {
-        const rest = { ...t };
-        delete rest[item.id];
-        return rest;
-      });
-    }
-  }
 
   async function saveEdit() {
     if (!editing) return;
@@ -75,7 +60,7 @@ export function ActionItems({ meetingId, items, participants, onSeek, onChange }
           <ul>
             {group.map((item) => (
               <li key={item.id} className={`${styles.item} ${isDone(item) ? styles.done : ""}`}>
-                <input type="checkbox" checked={isDone(item)} onChange={() => toggle(item)} aria-label={`Mark "${item.text}" ${isDone(item) ? "not done" : "done"}`} />
+                <input type="checkbox" checked={isDone(item)} onChange={() => toggle(item, (done) => patch(item.id, { is_done: done }))} aria-label={`Mark "${item.text}" ${isDone(item) ? "not done" : "done"}`} />
                 {editing?.id === item.id ? (
                   <input
                     className="input"
