@@ -35,6 +35,11 @@ def list_meetings(f: Annotated[MeetingFilters, Query()], db: Session = Depends(g
     if f.participant:
         stmt = stmt.where(Meeting.id.in_(
             select(MeetingParticipant.meeting_id).where(MeetingParticipant.person_id.in_(f.participant))))
+    if f.host:
+        stmt = stmt.where(Meeting.id.in_(
+            select(MeetingParticipant.meeting_id).where(MeetingParticipant.person_id.in_(f.host), MeetingParticipant.is_host)))
+    if f.source:
+        stmt = stmt.where(Meeting.source.in_(f.source))
     if f.topic:
         stmt = stmt.where(Meeting.topics.any(Topic.name.in_(f.topic)))
     if f.after:

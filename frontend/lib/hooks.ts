@@ -1,27 +1,36 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { type RefObject, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api } from "./api";
 
 export type Fetched<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
 
-/** GET a path and keep the result. Pass null to wait (e.g. until an id is known). reload() fetches again. */
+/** GET a path and keep the result. Pass null to wait (e.g. until an id is known). reload() fetches again.
+ *  While a new request is running, `data` still holds the previous answer and `loading` is true,
+ *  so lists can stay on screen (dimmed) instead of flashing empty. */
 export function useFetch<T>(path: string | null): Fetched<T> {
-  const [state, setState] = useState<{ data?: T; error?: string; loading: boolean }>({ loading: path !== null });
   const [tick, setTick] = useState(0);
+  const [settled, setSettled] = useState<{ key: string; data?: T; error?: string }>();
+  const key = path === null ? null : `${path}#${tick}`; // changes when the path changes or reload() is called
 
   useEffect(() => {
     if (path === null) return;
-    let current = true; // ignore the answer if the path changed or the page closed meanwhile
+    let current = true; // ignore the answer if the request was replaced or the page closed meanwhile
+    const thisKey = `${path}#${tick}`;
     api<T>(path)
-      .then((data) => current && setState({ data, loading: false }))
-      .catch((e: Error) => current && setState((s) => ({ ...s, error: e.message, loading: false })));
+      .then((data) => current && setSettled({ key: thisKey, data }))
+      .catch((e: Error) => current && setSettled((old) => ({ key: thisKey, data: old?.data, error: e.message })));
     return () => {
       current = false;
     };
   }, [path, tick]);
 
   const reload = useCallback(() => setTick((t) => t + 1), []);
-  return { ...state, reload };
+  return {
+    data: settled?.data,
+    error: settled?.key === key ? settled?.error : undefined,
+    loading: key !== null && settled?.key !== key,
+    reload,
+  };
 }
 
 /** A value that follows `value` after it has stopped changing for `ms`. For search-as-you-type. */
@@ -79,4 +88,24 @@ export function useLocalStorage<T extends string>(key: string, fallback: T, allo
     [key],
   );
   return [value, set];
+}
+
+
+/** Close a popup when the user clicks outside it or presses Escape. */
+export function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => void, active = true) {
+  const close = useRef(onClose);
+  useEffect(() => {
+    close.current = onClose;
+  });
+  useEffect(() => {
+    if (!active) return;
+    const onClick = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && close.current();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close.current();
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [ref, active]);
 }

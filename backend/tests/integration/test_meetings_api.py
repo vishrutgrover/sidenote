@@ -151,3 +151,23 @@ def test_delete_removes_the_meeting_and_everything_under_it(client):
     with SessionLocal() as db:
         assert db.scalar(select(func.count(Segment.id)).where(Segment.meeting_id == mid)) == 0
         assert db.scalar(select(func.count(ActionItem.id)).where(ActionItem.meeting_id == mid)) == 0
+
+
+# ---- host and source filters (library channels) ---------------------------------
+
+def test_filter_by_host_only_matches_the_person_who_hosts(client):
+    ms = client.get("/api/meetings").json()
+    me = next(p for m in ms for p in m["participants"] if p["name"] == "Vishrut Grover")["person_id"]
+    maya = next(p for m in ms for p in m["participants"] if p["name"] == "Maya Chen")["person_id"]
+    assert len(titles(client.get("/api/meetings", params={"host": me}))) == 6  # hosts every seed meeting
+    assert titles(client.get("/api/meetings", params={"host": maya})) == []  # attends some, hosts none
+    assert len(titles(client.get("/api/meetings", params={"participant": maya}))) == 3
+
+
+def test_filter_by_source_separates_uploads_from_samples(client):
+    client.post("/api/meetings", data={"title": "Pasted", "transcript": PASTE})
+    client.post("/api/meetings", files={"file": ("up.txt", io.BytesIO(PASTE.encode()), "text/plain")})
+    assert titles(client.get("/api/meetings", params={"source": "paste"})) == ["Pasted"]
+    assert len(titles(client.get("/api/meetings", params={"source": ["upload", "paste"]}))) == 2
+    assert len(titles(client.get("/api/meetings", params={"source": "seed"}))) == 6
+    assert titles(client.get("/api/meetings", params={"source": "nonsense"})) == []

@@ -47,6 +47,8 @@ class MeetingUpdate(BaseModel):
 class MeetingFilters(BaseModel):
     q: str | None = None
     participant: list[int] = []
+    host: list[int] = []
+    source: list[str] = []  # seed | upload | paste
     topic: list[str] = []
     after: UtcTime | None = Field(None, description="Started at or after this moment")
     before: UtcTime | None = Field(None, description="Started before this moment")
