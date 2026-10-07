@@ -31,3 +31,23 @@ export function mockApi(routes: Record<string, Handler>) {
   });
   return calls;
 }
+
+import type { Segment } from "@/lib/types";
+import type { Player } from "@/lib/usePlayer";
+
+export const line = (id: number, start: number, text: string, speaker: Segment["speaker"] = host): Segment => ({
+  id, start_sec: start, end_sec: start + 5, text, sentiment: "neutral", speaker, match: false, comment_count: 0,
+});
+
+export const transcript: Segment[] = [
+  line(1, 0, "Welcome everyone, let's plan the launch."),
+  line(2, 10, "First, the budget is tight this quarter."),
+  line(3, 20, "I agree, the launch date matters more.", { id: 2, person_id: 2, name: "Maya Chen", email: "maya@x.com", color: "#00B894", is_host: false }),
+  line(4, 30, "Then we launch on Friday.", { id: 2, person_id: 2, name: "Maya Chen", email: "maya@x.com", color: "#00B894", is_host: false }),
+  line(5, 40, "Great, budget approved."),
+];
+
+export const fakePlayer = (over: Partial<Player> = {}): Player => ({
+  time: 0, duration: 60, playing: false, speed: 1,
+  play: vi.fn(), pause: vi.fn(), toggle: vi.fn(), seek: vi.fn(), skip: vi.fn(), setSpeed: vi.fn(), ...over,
+});

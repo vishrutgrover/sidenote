@@ -3,10 +3,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .db import Base, SessionLocal, engine
 from .routers import action_items, chat, collab, export, llm, me, meetings, notes, people, search, topics, transcript
-from .seed import seed
+from .seed import MEDIA_DIR, seed
 
 
 @asynccontextmanager
@@ -27,6 +28,7 @@ app.add_middleware(
 )
 
 
+app.mount("/media", StaticFiles(directory=MEDIA_DIR, check_dir=False), name="media")  # sample recordings
 app.include_router(meetings.router)
 app.include_router(transcript.router)
 app.include_router(search.router)
