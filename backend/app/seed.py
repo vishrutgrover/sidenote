@@ -10,7 +10,7 @@ from .services.meetings import COLORS, get_or_create_person, get_or_create_topic
 from .services.parser import PAUSE_SEC, WORDS_PER_SEC
 from .services.sentiment import guess_sentiment
 
-DEFAULT_USER = {"name": "Vishrut Grover", "email": "vishrut@example.com"}
+DEFAULT_USER = "Vishrut Grover"
 
 
 def seed(db: Session) -> None:
@@ -18,7 +18,8 @@ def seed(db: Session) -> None:
     if db.scalar(select(User.id).limit(1)):
         return
 
-    user = User(**DEFAULT_USER)
+    me = get_or_create_person(db, DEFAULT_USER)
+    user = User(name=me.name, email=me.email, person_id=me.id)
     db.add(user)
     db.flush()
 

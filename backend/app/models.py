@@ -18,6 +18,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(200), unique=True)
+    person_id: Mapped[int | None] = mapped_column(ForeignKey("people.id"))  # who "me" is in transcripts and tasks
 
 
 class Person(Base):
@@ -137,6 +138,7 @@ class ActionItem(Base):
     is_done: Mapped[bool] = mapped_column(Boolean, default=False)
 
     assignee = relationship("MeetingParticipant")
+    meeting = relationship("Meeting", viewonly=True)
 
 
 # ---- collaboration ------------------------------------------------------
