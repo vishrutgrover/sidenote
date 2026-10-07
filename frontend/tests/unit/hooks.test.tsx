@@ -45,6 +45,33 @@ describe("useFetch", () => {
     expect(result.current.data).toEqual({ from: "fast" });
   });
 
+  it("keeps the previous answer on screen while the next one loads", async () => {
+    let finishSecond!: (r: Response) => void;
+    vi.spyOn(globalThis, "fetch").mockImplementation((url) =>
+      String(url).endsWith("/two") ? new Promise<Response>((r) => (finishSecond = r)) : Promise.resolve(json({ n: 1 })));
+    const { result, rerender } = renderHook(({ p }) => useFetch<{ n: number }>(p), { initialProps: { p: "/one" } });
+    await waitFor(() => expect(result.current.data).toEqual({ n: 1 }));
+    rerender({ p: "/two" });
+    expect(result.current.loading).toBe(true);
+    expect(result.current.data).toEqual({ n: 1 }); // old list still there
+    await act(async () => finishSecond(json({ n: 2 })));
+    expect(result.current.loading).toBe(false);
+    expect(result.current.data).toEqual({ n: 2 });
+  });
+
+  it("an error replaces nothing: old data stays, error is shown, and it clears on the next success", async () => {
+    const spy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(json({ n: 1 })).mockResolvedValueOnce(json({ detail: "boom" }, 500));
+    const { result, rerender } = renderHook(({ p }) => useFetch<{ n: number }>(p), { initialProps: { p: "/a" } });
+    await waitFor(() => expect(result.current.data).toEqual({ n: 1 }));
+    rerender({ p: "/b" });
+    await waitFor(() => expect(result.current.error).toBe("boom"));
+    expect(result.current.data).toEqual({ n: 1 });
+    spy.mockResolvedValue(json({ n: 3 }));
+    rerender({ p: "/c" });
+    await waitFor(() => expect(result.current.data).toEqual({ n: 3 }));
+    expect(result.current.error).toBeUndefined();
+  });
+
   it("reload fetches again", async () => {
     const spy = vi.spyOn(globalThis, "fetch").mockImplementation(() => Promise.resolve(json({ t: Math.random() })));
     const { result } = renderHook(() => useFetch<{ t: number }>("/api/x"));

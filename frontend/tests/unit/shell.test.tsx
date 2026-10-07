@@ -77,7 +77,7 @@ describe("Topbar", () => {
     render(<Topbar><button>Capture</button></Topbar>);
     expect(screen.getByRole("heading", { name: "Meetings" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Capture" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Search meetings" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open global search" })).toBeInTheDocument();
   });
 });
 

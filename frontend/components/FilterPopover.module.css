@@ -1,0 +1,100 @@
+.wrap {
+  position: relative;
+}
+.on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.popover {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  width: 460px;
+  max-width: 90vw;
+  min-height: 300px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 170px;
+  padding: 10px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+.menu > button:not(.clear) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-2);
+  text-align: left;
+}
+.menu > button:not(.clear):hover {
+  background: var(--bg-muted);
+}
+.current {
+  background: var(--primary-soft) !important;
+  color: var(--primary) !important;
+}
+.clear {
+  margin-top: auto;
+  width: 100%;
+  font-size: 13px;
+}
+.options {
+  flex: 1;
+  min-width: 0;
+  max-height: 340px;
+  padding: 10px 14px;
+  overflow-y: auto;
+}
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+  cursor: pointer;
+}
+.option small {
+  display: block;
+}
+.option input {
+  accent-color: var(--primary);
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin-bottom: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--faint);
+}
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: 0;
+}
+.dates {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}

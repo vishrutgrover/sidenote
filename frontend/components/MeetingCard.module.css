@@ -1,0 +1,86 @@
+.row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+}
+.row:hover {
+  background: var(--bg-subtle);
+}
+.card {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+}
+.body {
+  min-width: 0;
+}
+.title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 550;
+}
+.meta {
+  margin-top: 2px;
+  font-size: 13px;
+}
+.overview {
+  display: -webkit-box;
+  margin-top: 6px;
+  overflow: hidden;
+  color: var(--ink-2);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.failed {
+  background: transparent;
+  color: var(--danger);
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 0 0;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.row:hover .side,
+.row:focus-within .side {
+  opacity: 1;
+}
+@media (hover: none) {
+  .side {
+    opacity: 1;
+  }
+}
