@@ -20,6 +20,11 @@ class ParticipantOut(BaseModel):
     color: str
     is_host: bool
 
+    @classmethod
+    def from_seat(cls, seat):
+        return cls(id=seat.id, person_id=seat.person_id, name=seat.person.name, email=seat.person.email,
+                   color=seat.color, is_host=seat.is_host)
+
 
 class MeetingOut(BaseModel):
     id: int
@@ -48,3 +53,29 @@ class MeetingFilters(BaseModel):
     min_minutes: int | None = None
     max_minutes: int | None = None
     sort: str = Field("recent", pattern="^(recent|oldest)$")
+
+
+class SegmentOut(BaseModel):
+    id: int
+    start_sec: float
+    end_sec: float
+    text: str
+    sentiment: str
+    speaker: ParticipantOut | None
+    match: bool = False  # true when it matches the ?q= search
+
+    @classmethod
+    def from_segment(cls, seg, match: bool = False):
+        return cls(id=seg.id, start_sec=seg.start_sec, end_sec=seg.end_sec, text=seg.text, sentiment=seg.sentiment,
+                   speaker=ParticipantOut.from_seat(seg.speaker) if seg.speaker else None, match=match)
+
+
+class SegmentUpdate(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
+
+
+class SearchResult(BaseModel):
+    meeting: MeetingOut
+    title_match: bool
+    hit_count: int
+    hits: list[SegmentOut]  # first few matching lines
