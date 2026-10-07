@@ -3,7 +3,8 @@ import json
 from sqlalchemy import func, select
 
 from app.models import ActionItem, Meeting, Segment, Summary, Topic
-from app.seed import guess_sentiment, seed
+from app.seed import seed
+from app.services.sentiment import guess_sentiment
 
 
 def test_seed_fills_every_part_of_each_meeting(db):
