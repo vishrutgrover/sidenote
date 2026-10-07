@@ -41,16 +41,22 @@ realprod/sidenote/
 Styling: plain CSS variables + CSS modules (no UI library), easy to explain and to retheme from screenshots. State: React `useState` + fetch; no Redux. Toasts: tiny context provider.
 
 ## Database schema (SQLite)
-- `users` id, name, email, avatar_color (one default user, no auth)
-- `meetings` id, title, started_at, duration_sec, media_url, source (upload/paste/seed), created_by -> users, created_at
-- `participants` id, meeting_id FK, name, email, speaker_color (speakers are per-meeting)
-- `segments` id, meeting_id FK, participant_id FK, start_sec, end_sec, text (transcript lines; index on meeting_id,start_sec)
-- `summaries` id, meeting_id FK unique, overview, outline (JSON text), keywords (JSON text)
-- `action_items` id, meeting_id FK, assignee_participant_id FK null, text, due_date null, is_done, source_segment_id FK null
-- `topics` id, name unique; `meeting_topics` meeting_id, topic_id (tags many-to-many)
+- `users` id, name, email (the one default logged-in user, no auth)
+- `people` id, name, email unique (one row per human, shared by all meetings)
+- `meetings` id, title, started_at, duration_sec, media_url, source (seed/upload/paste), status (processing/ready/failed), created_by -> users, created_at
+- `meeting_participants` id, meeting_id FK, person_id FK, color, is_host; unique(meeting_id, person_id). Transcript lines and tasks point at this seat
+- `segments` id, meeting_id FK, speaker_id -> meeting_participants (SET NULL), start_sec, end_sec, text, sentiment (positive/neutral/negative)
+- `summaries` id, meeting_id FK unique, overview, keywords (JSON list)
+- `note_sections` id, meeting_id FK, title, position; `note_bullets` id, section_id FK, text, timestamp_sec, position
+- `action_items` id, meeting_id FK, assignee_id -> meeting_participants (SET NULL), text, timestamp_sec, due_date, is_done
+- `topics` id, name unique; `meeting_topics` meeting_id, topic_id (tags, many-to-many)
 - `comments` id, meeting_id FK, segment_id FK, user_id FK, body, created_at
-- `soundbites` id, meeting_id FK, start_sec, end_sec, title, created_at
-- `chat_messages` id, meeting_id FK, role, content, created_at (AskFred history)
+- `soundbites` id, meeting_id FK, start_sec, end_sec, title; `bookmarks` id, meeting_id FK, time_sec, note
+- `chat_messages` id, meeting_id FK (NULL = global chat), role, content, created_at
+- `ai_runs` id, meeting_id (SET NULL), task (summarize/ask), provider, model, latency_ms, status (ok/fallback/error), error, created_at
+- `segments_fts` FTS5 virtual table, kept in sync by triggers
+Talk time, words per minute, question counts and metrics are computed from `segments` at read time, never stored.
+Extra: a People page (per-person meetings, total talk time, open tasks) enabled by the global `people` table. Skipped: notifications feed, decisions section, meeting series.
 Delete meeting cascades to all children. Search uses SQLite FTS5 virtual table `segments_fts` for transcript text; title/participant search via LIKE.
 
 ## API (REST, JSON, `/api`)
@@ -89,6 +95,11 @@ Delete meeting cascades to all children. Search uses SQLite FTS5 virtual table `
 
 ## Skills to use during execution
 superpowers: brainstorming (spec), writing-plans, test-driven-development for parser/API, verification-before-completion before claims, requesting-code-review at end. ponytail: stdlib/native first (FTS5, HTML audio, `<dialog>`, CSS vars) and no extra deps.
+
+## Testing
+- Backend: `backend/tests/unit/` (one piece, in-memory DB) and `backend/tests/integration/` (HTTP API on a seeded temp DB). `make test`, `make test-unit`, `make test-integration`.
+- Frontend: `frontend/tests/unit/` (Vitest + Testing Library) and `frontend/tests/e2e/` (Playwright against both servers). `npm test`, `npm run test:e2e`.
+- Every PR adds or updates tests for what it changes.
 
 ## Verification
 - `cd backend && pytest` passes; `uvicorn app.main:app` serves `/docs`.
