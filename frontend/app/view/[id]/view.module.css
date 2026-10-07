@@ -27,8 +27,48 @@
 .body {
   display: grid;
   flex: 1;
-  grid-template-columns: minmax(0, 1fr) 440px;
+  grid-template-columns: 52px minmax(0, 1fr) 440px;
   min-height: 0;
+}
+.withPanel {
+  grid-template-columns: 52px 320px minmax(0, 1fr) 440px;
+}
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 8px;
+  border-right: 1px solid var(--border);
+}
+.rail button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-2);
+}
+.rail button:hover {
+  background: var(--bg-muted);
+}
+.railOn {
+  background: var(--primary-soft) !important;
+  color: var(--primary) !important;
+}
+.left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+}
+.left h2 {
+  flex: none;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 500;
 }
 .center {
   min-width: 0;
@@ -51,9 +91,6 @@
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 12px;
-}
-.summary {
-  margin-top: 32px;
 }
 .summary h2 {
   display: flex;
@@ -92,11 +129,21 @@
   color: var(--primary);
   font-weight: 500;
 }
-@media (max-width: 1000px) {
-  .body {
+@media (max-width: 1100px) {
+  .body,
+  .withPanel {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: none;
     overflow-y: auto;
+  }
+  .rail {
+    flex-direction: row;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .left {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
   }
   .right {
     min-height: 420px;

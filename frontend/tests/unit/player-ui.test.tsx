@@ -65,13 +65,16 @@ describe("TranscriptPanel", () => {
     return transcript.map((l) => ({ ...l, match: q ? ids.includes(l.id) : false }));
   };
   const api = (ids: number[] = [2, 5]) => mockApi({ "/api/meetings/1/transcript": withMatches(ids) });
-  const renderPanel = (player = fakePlayer()) => render(<TranscriptPanel meetingId={1} player={player} />);
+  const panel = (player = fakePlayer(), over: Partial<React.ComponentProps<typeof TranscriptPanel>> = {}) =>
+    <TranscriptPanel meetingId={1} lines={transcript} loading={false} player={player} {...over} />;
+  const renderPanel = (player = fakePlayer(), over = {}) => render(panel(player, over));
   const lineEl = (id: number) => document.querySelector(`[data-line="${id}"]`) as HTMLElement;
 
-  it("shows a placeholder, then every line with its time", async () => {
+  it("shows a placeholder while loading, then every line with its time", async () => {
     api();
-    const { container } = renderPanel();
+    const { container, rerender } = renderPanel(fakePlayer(), { lines: [], loading: true });
     expect(container.querySelectorAll(".skeleton").length).toBeGreaterThan(0);
+    rerender(panel());
     expect(await screen.findByText(/Welcome everyone/)).toBeInTheDocument();
     expect(screen.getByText("00:40")).toBeInTheDocument();
     expect(screen.getAllByTitle(/Jump to/)).toHaveLength(5);
@@ -90,7 +93,7 @@ describe("TranscriptPanel", () => {
     const { rerender } = renderPanel(fakePlayer({ time: 12 }));
     await screen.findByText(/Welcome everyone/);
     expect(lineEl(2)).toHaveAttribute("aria-current", "true");
-    rerender(<TranscriptPanel meetingId={1} player={fakePlayer({ time: 31 })} />);
+    rerender(panel(fakePlayer({ time: 31 })));
     expect(lineEl(2)).not.toHaveAttribute("aria-current");
     expect(lineEl(4)).toHaveAttribute("aria-current", "true");
     expect(document.querySelectorAll("[aria-current]")).toHaveLength(1);
@@ -109,10 +112,10 @@ describe("TranscriptPanel", () => {
     const { rerender } = renderPanel(fakePlayer({ time: 12, playing: false }));
     await screen.findByText(/Welcome everyone/);
     expect(scrollIntoView).not.toHaveBeenCalled();
-    rerender(<TranscriptPanel meetingId={1} player={fakePlayer({ time: 12, playing: true })} />);
+    rerender(panel(fakePlayer({ time: 12, playing: true })));
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
     scrollIntoView.mockClear();
-    rerender(<TranscriptPanel meetingId={1} player={fakePlayer({ time: 22, playing: true })} />);
+    rerender(panel(fakePlayer({ time: 22, playing: true })));
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1));
   });
 
@@ -122,7 +125,7 @@ describe("TranscriptPanel", () => {
     await screen.findByText(/Welcome everyone/);
     fireEvent.wheel(document.querySelector("[class*=lines]")!);
     scrollIntoView.mockClear();
-    rerender(<TranscriptPanel meetingId={1} player={fakePlayer({ time: 22, playing: true })} />);
+    rerender(panel(fakePlayer({ time: 22, playing: true })));
     expect(scrollIntoView).not.toHaveBeenCalled();
     fireEvent.click(await screen.findByRole("button", { name: /Jump to current/ }));
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
@@ -229,15 +232,13 @@ describe("TranscriptPanel", () => {
     });
   });
 
-  it("shows the server's message when the transcript cannot load", async () => {
-    mockApi({ "/api/meetings/1/transcript": new Response(JSON.stringify({ detail: "Meeting not found" }), { status: 404 }) });
-    renderPanel();
+  it("shows the message when the transcript cannot load", async () => {
+    renderPanel(fakePlayer(), { lines: [], error: "Meeting not found" });
     expect(await screen.findByText("Meeting not found")).toBeInTheDocument();
   });
 
   it("copes with lines that have no speaker", async () => {
-    mockApi({ "/api/meetings/1/transcript": [line(1, 0, "Orphan line", null)] });
-    renderPanel();
+    renderPanel(fakePlayer(), { lines: [line(1, 0, "Orphan line", null)] });
     expect(await screen.findByText("Unknown")).toBeInTheDocument();
     expect(screen.getByText("Orphan line")).toBeInTheDocument();
   });

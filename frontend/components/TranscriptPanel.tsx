@@ -9,9 +9,8 @@ import type { Player } from "@/lib/usePlayer";
 import styles from "./TranscriptPanel.module.css";
 
 /** The transcript with a find bar. Click a line to jump there; the line being spoken follows playback. */
-export function TranscriptPanel({ meetingId, player }: { meetingId: number; player: Player }) {
+export function TranscriptPanel({ meetingId, lines, loading, error, player }: { meetingId: number; lines: Segment[]; loading: boolean; error?: string; player: Player }) {
   const base = `/api/meetings/${meetingId}/transcript`;
-  const { data: lines = [], error, loading } = useFetch<Segment[]>(base);
 
   const [find, setFind] = useState("");
   const typed = useDebounced(find.trim(), 250);
