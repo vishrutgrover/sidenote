@@ -47,7 +47,7 @@
   margin: 6px 0;
   line-height: 1.6;
 }
-.section li .input {
+.section li :global(.input) {
   margin: -2px 0;
 }
 .stamp {

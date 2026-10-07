@@ -17,7 +17,7 @@
   align-items: center;
   gap: 10px;
 }
-.me .muted {
+.me :global(.muted) {
   max-width: 200px;
   overflow: hidden;
   font-size: 12px;
