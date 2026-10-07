@@ -1,0 +1,44 @@
+.form {
+  display: grid;
+  gap: 16px;
+}
+.field {
+  display: grid;
+  gap: 8px;
+  font-weight: 500;
+}
+.field span {
+  font-weight: 400;
+  font-size: 12px;
+}
+.people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.people small {
+  color: var(--primary);
+}
+.people button {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.add {
+  display: flex;
+  gap: 8px;
+}
+.error {
+  margin: 0;
+  color: var(--danger);
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

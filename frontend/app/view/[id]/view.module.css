@@ -12,6 +12,9 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
 }
+.menu {
+  margin-left: auto;
+}
 .crumbs {
   display: flex;
   gap: 8px;

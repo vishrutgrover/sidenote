@@ -163,6 +163,8 @@ describe("FilterPopover", () => {
   });
 });
 
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 describe("Meetings page", () => {
   const m1 = meeting({ id: 1, title: "Today meeting", started_at: "2026-10-10T18:00:00" });
   const m2 = meeting({ id: 2, title: "Old meeting", started_at: "2026-10-02T18:00:00" });
@@ -262,6 +264,18 @@ describe("Meetings page", () => {
     await waitFor(() => expect(container.querySelector("[aria-busy=true]")).not.toBeNull());
     await act(async () => release());
     expect(await screen.findByText("Old meeting")).toBeInTheDocument();
+  });
+
+  it("deleting from a card's menu refreshes the list", async () => {
+    let deleted = false;
+    mockApi({ ...base, "/api/meetings/1": () => { deleted = true; return new Response(null, { status: 204 }); }, "/api/meetings": () => (deleted ? [m2] : [m1, m2]) });
+    renderPage();
+    await screen.findByText("Today meeting");
+    fireEvent.click(screen.getByRole("button", { name: "Actions for Today meeting" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(screen.queryByText("Today meeting")).toBeNull());
+    expect(screen.getByText("Old meeting")).toBeInTheDocument();
   });
 
   it("clears search and filters from the empty state but stays in the same channel", async () => {

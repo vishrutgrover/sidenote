@@ -18,3 +18,13 @@ window.matchMedia = ((query: string) => ({
   addEventListener: () => {},
   removeEventListener: () => {},
 })) as unknown as typeof window.matchMedia;
+
+// jsdom does not implement the modal parts of <dialog>
+HTMLDialogElement.prototype.showModal = function () {
+  this.setAttribute("open", "");
+};
+HTMLDialogElement.prototype.close = function () {
+  if (!this.hasAttribute("open")) return;
+  this.removeAttribute("open");
+  this.dispatchEvent(new Event("close"));
+};

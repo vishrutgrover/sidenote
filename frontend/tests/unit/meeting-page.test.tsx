@@ -1,9 +1,11 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MeetingPage from "@/app/view/[id]/page";
+import { ToastProvider } from "@/components/Toast";
 import { insights, items, meeting, mockApi, summary, topics, transcript } from "./helpers/fixtures";
 
-vi.mock("next/navigation", () => ({ useParams: () => ({ id: "1" }) }));
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useParams: () => ({ id: "1" }), useRouter: () => ({ push }) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 
 beforeEach(() => {
@@ -71,6 +73,16 @@ describe("Meeting page", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(10500); });
     expect(document.querySelector('[data-line="3"]')).toHaveAttribute("aria-current", "true"); // 20.5s
     fireEvent.click(screen.getByRole("button", { name: "Pause" }));
+  });
+
+  it("deleting the meeting from its menu goes back to the library", async () => {
+    const calls = mockApi({ ...extras, "/api/meetings/1/transcript": transcript, "/api/meetings/1": () => meeting() });
+    render(<ToastProvider><MeetingPage /></ToastProvider>);
+    fireEvent.click(await screen.findByRole("button", { name: /Actions for/ }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete" }));
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/meetings"));
+    expect(calls.requests!.some((r) => r.method === "DELETE")).toBe(true);
   });
 
   it("Space plays and pauses, arrows skip 5 seconds, but not while typing in the find box", async () => {
