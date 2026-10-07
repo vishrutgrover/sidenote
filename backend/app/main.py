@@ -20,12 +20,14 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Sidenote API", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def cors_settings() -> dict:
+    """Which websites may call this API from a browser.
+    CORS_ORIGINS: exact addresses, comma separated. CORS_ORIGIN_REGEX: a pattern, e.g. every Vercel preview address."""
+    origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+    return {"allow_origins": origins, "allow_origin_regex": os.getenv("CORS_ORIGIN_REGEX") or None}
+
+
+app.add_middleware(CORSMiddleware, allow_methods=["*"], allow_headers=["*"], **cors_settings())
 
 
 app.mount("/media", StaticFiles(directory=MEDIA_DIR, check_dir=False), name="media")  # sample recordings

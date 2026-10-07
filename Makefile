@@ -1,6 +1,11 @@
-.PHONY: test test-unit test-integration test-frontend test-e2e test-all run run-frontend
+.PHONY: install test test-unit test-integration test-frontend test-e2e test-all run run-frontend
 
 PY = backend/.venv/bin
+
+install:             ## backend virtualenv, frontend packages, and the browser the end-to-end tests use
+	python3 -m venv backend/.venv
+	$(PY)/pip install -q -r backend/requirements-dev.txt
+	cd frontend && npm install && npx playwright install chromium
 
 # ---- tests ----
 test:                ## backend: unit + integration
