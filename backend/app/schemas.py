@@ -240,3 +240,32 @@ class BookmarkOut(BaseModel):
     time_sec: float
     note: str
     created_at: datetime
+
+
+class AskIn(AiChoice):
+    question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+
+
+class SourceOut(BaseModel):
+    meeting_id: int
+    meeting_title: str
+    segment_id: int
+    start_sec: float
+    speaker: str
+
+
+class ChatMessageOut(BaseModel):
+    id: int
+    meeting_id: int | None
+    role: str
+    content: str
+    sources: list[SourceOut]
+    provider: str | None
+    model: str | None
+    created_at: datetime
+
+
+class AskOut(BaseModel):
+    user: ChatMessageOut
+    assistant: ChatMessageOut
+    ai: AiInfo

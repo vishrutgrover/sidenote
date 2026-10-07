@@ -4,6 +4,7 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from ..models import Meeting, MeetingParticipant, Person, Segment
+from .ai_mock import words
 
 
 def fts_query(q: str) -> str | None:
@@ -34,3 +35,19 @@ def title_or_person_clause(q: str):
     """SQL condition: meeting title or any participant name contains q (wildcards in q are literal)."""
     by_person = select(MeetingParticipant.meeting_id).join(Person).where(Person.name.icontains(q, autoescape=True))
     return Meeting.title.icontains(q, autoescape=True) | Meeting.id.in_(by_person)
+
+
+def top_segments(db: Session, question: str, meeting_id: int | None = None, limit: int = 8) -> list[Segment]:
+    """The lines most relevant to a question, best match first by bm25 and returned in reading order.
+    Any meaningful word may match (OR), unlike segment_hits where every word must."""
+    terms = list(dict.fromkeys(words(question)))
+    if not terms:
+        return []
+    sql = ("SELECT s.id FROM segments s JOIN segments_fts ON segments_fts.rowid = s.id "
+           "WHERE segments_fts MATCH :q" + (" AND s.meeting_id = :m" if meeting_id is not None else "")
+           + " ORDER BY bm25(segments_fts) LIMIT :n")
+    params = {"q": " OR ".join(f'"{w}"*' for w in terms), "n": limit}
+    if meeting_id is not None:
+        params["m"] = meeting_id
+    ids = db.execute(text(sql), params).scalars().all()
+    return list(db.scalars(select(Segment).where(Segment.id.in_(ids)).order_by(Segment.meeting_id, Segment.start_sec)))

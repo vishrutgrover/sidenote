@@ -186,6 +186,9 @@ class ChatMessage(Base):
     meeting_id: Mapped[int | None] = mapped_column(ForeignKey("meetings.id", ondelete="CASCADE"), index=True)
     role: Mapped[str] = mapped_column(String(10))  # user | assistant
     content: Mapped[str] = mapped_column(Text)
+    sources: Mapped[str] = mapped_column(Text, default="[]")  # JSON list of transcript line ids the answer drew on
+    provider: Mapped[str | None] = mapped_column(String(30))  # who wrote an assistant message
+    model: Mapped[str | None] = mapped_column(String(80))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
 
