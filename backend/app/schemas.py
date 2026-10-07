@@ -63,11 +63,13 @@ class SegmentOut(BaseModel):
     sentiment: str
     speaker: ParticipantOut | None
     match: bool = False  # true when it matches the ?q= search
+    comment_count: int = 0
 
     @classmethod
-    def from_segment(cls, seg, match: bool = False):
+    def from_segment(cls, seg, match: bool = False, comment_count: int = 0):
         return cls(id=seg.id, start_sec=seg.start_sec, end_sec=seg.end_sec, text=seg.text, sentiment=seg.sentiment,
-                   speaker=ParticipantOut.from_seat(seg.speaker) if seg.speaker else None, match=match)
+                   speaker=ParticipantOut.from_seat(seg.speaker) if seg.speaker else None, match=match,
+                   comment_count=comment_count)
 
 
 class SegmentUpdate(BaseModel):
@@ -190,4 +192,51 @@ class AiRunOut(BaseModel):
     latency_ms: int
     status: str
     error: str | None
+    created_at: datetime
+
+
+class CommentCreate(BaseModel):
+    segment_id: int
+    body: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+
+
+class CommentOut(BaseModel):
+    id: int
+    segment_id: int
+    start_sec: float  # where the commented line starts
+    quote: str  # the commented line
+    author: str
+    body: str
+    created_at: datetime
+
+
+class SoundbiteCreate(BaseModel):
+    start_sec: float = Field(ge=0)
+    end_sec: float = Field(gt=0)
+    title: Title
+
+
+class SoundbiteUpdate(BaseModel):
+    title: Title
+
+
+class SoundbiteOut(BaseModel):
+    id: int
+    start_sec: float
+    end_sec: float
+    title: str
+    excerpt: str  # what was said in that range
+    created_at: datetime
+
+
+class BookmarkCreate(BaseModel):
+    time_sec: float = Field(ge=0)
+    note: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] = ""
+
+
+class BookmarkOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    time_sec: float
+    note: str
     created_at: datetime

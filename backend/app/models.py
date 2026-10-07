@@ -152,6 +152,9 @@ class Comment(Base):
     body: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
+    user = relationship("User")
+    segment = relationship("Segment")
+
 
 class Soundbite(Base):
     """A shareable clip: a time range with a title."""
