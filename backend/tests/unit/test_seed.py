@@ -2,7 +2,7 @@ import json
 
 from sqlalchemy import func, select
 
-from app.models import ActionItem, Meeting, Segment, Summary, Topic
+from app.models import Meeting, Segment, Topic
 from app.seed import seed
 from app.services.sentiment import guess_sentiment
 

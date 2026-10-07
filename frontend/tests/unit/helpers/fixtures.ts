@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import type { Meeting, Person, Topic } from "@/lib/types";
 
-export const host = { id: 1, person_id: 1, name: "Vishrut Grover", email: "v@x.com", color: "#6C5CE7", is_host: true };
+const host = { id: 1, person_id: 1, name: "Vishrut Grover", email: "v@x.com", color: "#6C5CE7", is_host: true };
 export const guest = { id: 2, person_id: 2, name: "Maya Chen", email: "maya@x.com", color: "#00B894", is_host: false };
 
 export const meeting = (over: Partial<Meeting> = {}): Meeting => ({

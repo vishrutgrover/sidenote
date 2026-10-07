@@ -95,18 +95,6 @@
   gap: 6px;
   margin-top: 12px;
 }
-.summary h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 500;
-}
-.summary p {
-  line-height: 1.7;
-}
 .processing {
   margin-top: 32px;
   padding: 48px 16px;

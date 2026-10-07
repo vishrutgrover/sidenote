@@ -2,7 +2,7 @@
 import { type RefObject, useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api } from "./api";
 
-export type Fetched<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
+type Fetched<T> = { data?: T; error?: string; loading: boolean; reload: () => void };
 
 /** GET a path and keep the result. Pass null to wait (e.g. until an id is known). reload() fetches again.
  *  While a new request is running, `data` still holds the previous answer and `loading` is true,

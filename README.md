@@ -123,7 +123,7 @@ Every route is under `/api`. Interactive docs at `/docs` when the server runs.
 
 ## Tests
 
-**960 tests** across four layers, one command each.
+**963 tests** across four layers, one command each.
 
 | Layer | Where | What | Run |
 |---|---|---|---|
@@ -132,13 +132,14 @@ Every route is under `/api`. Interactive docs at `/docs` when the server runs.
 | Frontend unit | `frontend/tests/unit` | Vitest + Testing Library | `make test-frontend` |
 | Browser end to end | `frontend/tests/e2e` | Playwright, real backend, real audio | `make test-e2e` |
 
-Currently **374** backend, **494** frontend and **92** browser tests, all passing (`make test-all`).
+Currently **374** backend, **496** frontend and **93** browser tests, all passing (`make test-all`).
 Some tests check the tests: breaking the code on purpose and confirming a test fails.
 
 ## Choices and limits
 
 - **No real speech-to-text.** Meetings come from transcripts you upload or paste. The six sample meetings are read aloud by synthetic voices (macOS `say`, see `backend/scripts/make_sample_audio.py`) placed exactly at the transcript times.
 - **No login.** Everyone is the one default user. Sharing, teams, integrations, live capture and analytics are labelled "coming soon".
+- **People are matched by name.** Uploaded transcripts carry no email, so two different people with the same name would be treated as one.
 - **SQLite.** Simple and easy to explain. The free hosting tier has no persistent disk, so on the demo the sample data is re-created at every restart.
 - **Skipped on purpose:** DOCX and audio download (extra dependencies), a notification service (the bell is derived from your meetings), migrations (tables are created at startup).
 
@@ -161,4 +162,4 @@ backend/   FastAPI · SQLAlchemy · SQLite     frontend/   Next.js (App Router) 
   tests/        unit + integration           docs/         EXPLAINED.md, screenshots
 ```
 
-New here? **[docs/EXPLAINED.md](docs/EXPLAINED.md)** walks through the design decisions in plain words.
+Learning the code? Start with **[docs/EXPLAINED.md](docs/EXPLAINED.md)** (design decisions in plain words), then **[docs/CODE_TOUR.md](docs/CODE_TOUR.md)** (every file, three requests traced end to end, the tricky parts line by line). **[docs/GENERATED.md](docs/GENERATED.md)** lists every generated file with the command that made it, and **[docs/CHECKLIST.md](docs/CHECKLIST.md)** maps each requirement of the brief to its code and its test.

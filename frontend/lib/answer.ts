@@ -1,5 +1,5 @@
-export type Part = string | { time: number; label: string };
-export type Block = { kind: "p" | "li"; parts: Part[] };
+type Part = string | { time: number; label: string };
+type Block = { kind: "p" | "li"; parts: Part[] };
 
 const CITATION = /\[(\d+):(\d{2})\]/g;
 

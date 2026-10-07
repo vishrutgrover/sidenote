@@ -18,7 +18,7 @@ export function queryWords(query: string): string[] {
   return query.match(/\w+/g) ?? [];
 }
 
-export type Piece = { text: string; hit: boolean };
+type Piece = { text: string; hit: boolean };
 
 /** Cut text into pieces so the matching words can be wrapped in <mark>. A word matches when it starts with a query word. */
 export function highlightPieces(text: string, query: string): Piece[] {

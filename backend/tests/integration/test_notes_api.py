@@ -153,7 +153,7 @@ def test_tagging_is_normalised_and_idempotent(client):
     assert "launch plan" in client.put(f"/api/meetings/{m['id']}/topics/  Launch   PLAN ").json()
     again = client.put(f"/api/meetings/{m['id']}/topics/launch plan").json()
     assert again.count("launch plan") == 1
-    assert client.get(f"/api/meetings?topic=launch plan").json()[0]["id"] == m["id"]
+    assert client.get("/api/meetings?topic=launch plan").json()[0]["id"] == m["id"]
 
 
 def test_untagging_and_unused_tags_drop_out_of_the_list(client):

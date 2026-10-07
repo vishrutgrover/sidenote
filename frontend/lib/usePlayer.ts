@@ -29,7 +29,7 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
   const [speed, setSpeedState] = useState(1);
   const [mediaDuration, setMediaDuration] = useState<number | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
-  const clock = useRef(0); // the current time while no audio element exists
+  const clock = useRef(0); // the current time in seconds, whether it comes from the audio or from the timer
   const speedRef = useRef(1);
   const stopAt = useRef<number | null>(null); // set while playing a range
   const duration = mediaUrl && mediaDuration ? mediaDuration : durationSec;
@@ -40,6 +40,7 @@ export function usePlayer(durationSec: number, mediaUrl: string | null): Player 
     a.preload = "metadata";
     a.playbackRate = speedRef.current;
     a.addEventListener("timeupdate", () => {
+      clock.current = a.currentTime; // skip() and play() read this, so it must follow the audio
       setTime(a.currentTime);
       if (stopAt.current !== null && a.currentTime >= stopAt.current) {
         stopAt.current = null;
