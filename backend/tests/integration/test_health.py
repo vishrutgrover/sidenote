@@ -11,3 +11,9 @@ def test_startup_seeds_the_database(client):
 
     with SessionLocal() as db:
         assert db.scalar(select(func.count(Meeting.id))) >= 6
+
+
+def test_me_is_the_default_user_and_matches_a_person(client):
+    me = client.get("/api/me").json()
+    assert me["name"] == "Vishrut Grover" and me["person_id"]
+    assert me["person_id"] in [p["id"] for p in client.get("/api/people").json()]
