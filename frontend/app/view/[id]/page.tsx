@@ -1,14 +1,16 @@
 "use client";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
-import { ChevronLeft, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, Search, Sparkles } from "lucide-react";
+import { NotesPanel } from "@/components/NotesPanel";
 import { PlayerBar } from "@/components/PlayerBar";
+import { SmartSearch } from "@/components/SmartSearch";
 import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { apiUrl } from "@/lib/api";
 import { dateTimeLabel, duration, initials } from "@/lib/format";
 import { useFetch, useHotkey } from "@/lib/hooks";
-import type { Meeting } from "@/lib/types";
+import type { ActionItem, Insights, Meeting, Segment } from "@/lib/types";
 import { usePlayer } from "@/lib/usePlayer";
 import styles from "./view.module.css";
 
@@ -18,6 +20,14 @@ const typingIn = (e: KeyboardEvent) => e.target instanceof HTMLElement && (["INP
 export default function MeetingPage() {
   const { id } = useParams<{ id: string }>();
   const { data: meeting, error, reload } = useFetch<Meeting>(`/api/meetings/${id}`);
+  const { data: lines = [], loading: linesLoading, error: linesError } = useFetch<Segment[]>(`/api/meetings/${id}/transcript`);
+  const { data: items = [], reload: reloadItems } = useFetch<ActionItem[]>(`/api/meetings/${id}/action-items`);
+  const { data: insights, reload: reloadInsights } = useFetch<Insights>(`/api/meetings/${id}/insights`);
+  const itemsChanged = () => {
+    reloadItems();
+    reloadInsights();
+  };
+  const [panel, setPanel] = useState<"search" | null>("search");
   const player = usePlayer(meeting?.duration_sec ?? 0, meeting?.media_url ? apiUrl(meeting.media_url) : null);
 
   // a freshly uploaded meeting is still being processed: check again until it is ready
@@ -54,7 +64,18 @@ export default function MeetingPage() {
         </nav>
       </header>
 
-      <div className={styles.body}>
+      <div className={`${styles.body} ${panel ? styles.withPanel : ""}`}>
+        <nav className={styles.rail} aria-label="Meeting tools">
+          <button className={panel === "search" ? styles.railOn : ""} onClick={() => setPanel(panel === "search" ? null : "search")} aria-label="Smart Search" aria-pressed={panel === "search"} title="Smart Search">
+            <Search size={18} />
+          </button>
+        </nav>
+        {panel === "search" && meeting && (
+          <aside className={styles.left} aria-label="Smart Search">
+            <h2>Smart Search</h2>
+            <SmartSearch meeting={meeting} lines={lines} insights={insights} tasks={items} onSeek={(t) => player.seek(t)} onTagsChanged={reload} />
+          </aside>
+        )}
         <section className={styles.center}>
           {!meeting ? (
             <div className="skeleton" style={{ height: 120 }} />
@@ -81,10 +102,7 @@ export default function MeetingPage() {
                   <p>The transcript is still available on the right.</p>
                 </div>
               ) : (
-                <div className={styles.summary}>
-                  <h2><Sparkles size={15} /> General Summary</h2>
-                  <p>{meeting.overview || "No summary yet."}</p>
-                </div>
+                <NotesPanel meeting={meeting} items={items} onItemsChanged={itemsChanged} onSeek={(t) => { player.seek(t); }} />
               )}
             </>
           )}
@@ -92,7 +110,7 @@ export default function MeetingPage() {
 
         <aside className={styles.right} aria-label="Transcript">
           <div className={styles.tabs}><span className={styles.tab}>Transcript</span></div>
-          {meeting && <TranscriptPanel meetingId={meeting.id} player={player} />}
+          {meeting && <TranscriptPanel meetingId={meeting.id} lines={lines} loading={linesLoading} error={linesError} player={player} />}
         </aside>
       </div>
 

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import MeetingPage from "@/app/view/[id]/page";
-import { meeting, mockApi, transcript } from "./helpers/fixtures";
+import { insights, items, meeting, mockApi, summary, topics, transcript } from "./helpers/fixtures";
 
 vi.mock("next/navigation", () => ({ useParams: () => ({ id: "1" }) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
@@ -12,7 +12,8 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
-const api = (m = meeting()) => mockApi({ "/api/meetings/1/transcript": transcript, "/api/meetings/1": m });
+const extras = { "/api/meetings/1/summary": summary, "/api/meetings/1/action-items": items, "/api/meetings/1/insights": insights, "/api/topics": topics };
+const api = (m = meeting()) => mockApi({ ...extras, "/api/meetings/1/transcript": transcript, "/api/meetings/1": m });
 const time = () => screen.getByLabelText("Time").textContent;
 
 describe("Meeting page", () => {
@@ -22,9 +23,36 @@ describe("Meeting page", () => {
     expect(await screen.findByRole("heading", { name: "Weekly Sync" })).toBeInTheDocument();
     expect(screen.getByText(/Vishrut Grover · Oct 7 · 11:25 AM · 9 min/)).toBeInTheDocument();
     expect(screen.getByText("Maya Chen", { selector: ".chip" })).toBeInTheDocument();
-    expect(screen.getByText("They agreed to ship.")).toBeInTheDocument();
+    expect(await screen.findByText("They agreed to ship on Friday.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "#All Meetings" })).toHaveAttribute("href", "/meetings");
     expect(await screen.findByText(/Welcome everyone/)).toBeInTheDocument();
+  });
+
+  it("clicking a note's moment, a task's moment or a filtered line moves the clock too", async () => {
+    api();
+    render(<MeetingPage />);
+    fireEvent.click(await screen.findByText("(01:05)")); // a bullet in the notes
+    expect(time()).toContain("01:05");
+    fireEvent.click(screen.getAllByText("(01:23)")[0]); // an action item
+    expect(time()).toContain("01:23");
+  });
+
+  it("the Smart Search rail button hides and shows the panel", async () => {
+    api();
+    render(<MeetingPage />);
+    expect(await screen.findByRole("heading", { name: "Smart Search" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Smart Search" }));
+    expect(screen.queryByRole("heading", { name: "Smart Search" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Smart Search" }));
+    expect(await screen.findByRole("heading", { name: "Smart Search" })).toBeInTheDocument();
+  });
+
+  it("ticking a task refreshes both the list and the Smart Search numbers", async () => {
+    const calls = mockApi({ ...extras, "/api/action-items/1": items[0], "/api/meetings/1/transcript": transcript, "/api/meetings/1": meeting() });
+    render(<MeetingPage />);
+    fireEvent.click(await screen.findByLabelText('Mark "Draft the copy" done'));
+    await waitFor(() => expect(calls.filter((c) => c === "/api/meetings/1/insights")).toHaveLength(2));
+    expect(calls.filter((c) => c === "/api/meetings/1/action-items")).toHaveLength(2);
   });
 
   it("clicking a line moves the clock to it", async () => {
@@ -81,19 +109,20 @@ describe("Meeting page", () => {
 
   it("shows a processing state and keeps checking until the notes are ready", async () => {
     let ready = false;
-    mockApi({ "/api/meetings/1/transcript": transcript, "/api/meetings/1": () => meeting(ready ? { overview: "Fresh notes." } : { status: "processing", overview: "" }) });
+    mockApi({ ...extras, "/api/meetings/1/transcript": transcript, "/api/meetings/1": () => meeting(ready ? { status: "ready" } : { status: "processing", overview: "" }) });
     render(<MeetingPage />);
     expect(await screen.findByText("Meeting summary is processing…")).toBeInTheDocument();
     ready = true;
     await act(async () => { await vi.advanceTimersByTimeAsync(2100); });
-    expect(await screen.findByText("Fresh notes.")).toBeInTheDocument();
+    expect(await screen.findByText("They agreed to ship on Friday.")).toBeInTheDocument(); // the notes appear once ready
     expect(screen.queryByText("Meeting summary is processing…")).toBeNull();
   });
 
   it("stops checking once ready", async () => {
     const calls = api();
     render(<MeetingPage />);
-    await screen.findByText("They agreed to ship.");
+    await screen.findByText("They agreed to ship on Friday.");
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
     const n = calls.length;
     await act(async () => { await vi.advanceTimersByTimeAsync(7000); });
     expect(calls.length).toBe(n);
@@ -121,7 +150,7 @@ describe("Meeting page", () => {
   });
 
   it("copes with a meeting that has no participants and no summary", async () => {
-    api(meeting({ participants: [], overview: "" }));
+    mockApi({ ...extras, "/api/meetings/1/summary": { overview: "", keywords: [], sections: [] }, "/api/meetings/1/transcript": transcript, "/api/meetings/1": meeting({ participants: [], overview: "" }) });
     render(<MeetingPage />);
     expect(await screen.findByText("No summary yet.")).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole("heading", { name: "Weekly Sync" })).toBeInTheDocument());

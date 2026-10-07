@@ -1,0 +1,98 @@
+.section h2 {
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 550;
+}
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--ink-2);
+}
+.banner svg {
+  color: var(--primary);
+}
+.group h3 {
+  margin: 16px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+}
+.item:hover {
+  background: var(--bg-subtle);
+}
+.item input[type="checkbox"] {
+  flex: none;
+  accent-color: var(--primary);
+}
+.text {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.done .text {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+.stamp {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.stamp:hover {
+  color: var(--primary);
+}
+.who {
+  max-width: 130px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+.item:hover .who {
+  border-color: var(--border);
+}
+.remove {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--faint);
+  opacity: 0;
+}
+.item:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+.remove:hover {
+  color: var(--danger);
+}
+.add {
+  display: grid;
+  grid-template-columns: 1fr 150px auto;
+  gap: 8px;
+  margin-top: 20px;
+}

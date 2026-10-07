@@ -35,6 +35,7 @@ test("playing really plays the recording and the transcript follows it", async (
   await expect(time(page)).not.toContainText("00:49 /", { timeout: 5000 }); // the clock moved on from the click position
   await expect.poll(() => seconds(page), { timeout: 8000 }).toBeGreaterThanOrEqual(51);
   await page.getByRole("button", { name: "Pause" }).click();
+  await page.waitForTimeout(500); // the audio element reports its final position just after pausing
   const paused = await time(page).textContent();
   await page.waitForTimeout(800);
   expect(await time(page).textContent()).toBe(paused);
