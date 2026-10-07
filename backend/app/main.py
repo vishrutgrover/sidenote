@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import Base, SessionLocal, engine
-from .routers import action_items, chat, collab, export, llm, meetings, notes, people, search, topics, transcript
+from .routers import action_items, chat, collab, export, llm, me, meetings, notes, people, search, topics, transcript
 from .seed import seed
 
 
@@ -38,6 +38,7 @@ app.include_router(collab.router)
 app.include_router(export.router)
 app.include_router(chat.router)
 app.include_router(people.router)
+app.include_router(me.router)
 
 
 @app.get("/api/health")
