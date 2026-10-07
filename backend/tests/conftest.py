@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 
 # point the app at a throwaway database before anything imports it
@@ -37,3 +38,11 @@ def client():
     Base.metadata.drop_all(engine)
     with TestClient(app) as c:  # entering the context runs startup: create tables + seed
         yield c
+
+
+@pytest.fixture(autouse=True)
+def no_llm_settings(monkeypatch):
+    """Tests never see the developer's real API keys or provider choices."""
+    for name in list(os.environ):
+        if re.search(r"_API_KEY$|_BASE_URL$|_MODELS$|^LLM_", name):
+            monkeypatch.delenv(name)

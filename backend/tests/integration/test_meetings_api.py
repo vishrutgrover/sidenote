@@ -76,8 +76,9 @@ def test_create_from_pasted_text(client):
     r = client.post("/api/meetings", data={"title": "Launch call", "transcript": PASTE})
     assert r.status_code == 201
     m = r.json()
-    assert m["title"] == "Launch call" and m["source"] == "paste" and m["status"] == "ready"
+    assert m["title"] == "Launch call" and m["source"] == "paste" and m["status"] == "processing"
     assert [p["name"] for p in m["participants"]] == ["Ana", "Ben"]
+    assert client.get(f"/api/meetings/{m['id']}").json()["status"] == "ready"  # notes were written in the background
     assert titles(client.get("/api/meetings"))[0] == "Launch call"
     assert client.get(f"/api/meetings/{m['id']}").status_code == 200
 
