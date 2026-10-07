@@ -1,0 +1,29 @@
+# Render Blueprint: creates the backend web service from this repo.
+# After the first deploy, set CORS_ORIGINS to your Vercel address (see README, Deploy).
+services:
+  - type: web
+    name: sidenote-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        value: sqlite:///./sidenote.db   # the free tier has no persistent disk: sample data is re-created at every start
+      - key: CORS_ORIGIN_REGEX
+        value: https://[a-z0-9-]+\.vercel\.app
+      - key: CORS_ORIGINS
+        sync: false                      # set in the dashboard: your production Vercel address
+      # Optional AI providers: set any of these in the dashboard to turn them on
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

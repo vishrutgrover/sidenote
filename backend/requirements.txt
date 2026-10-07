@@ -1,7 +1,6 @@
-fastapi
-uvicorn[standard]
-sqlalchemy>=2
-httpx
-python-multipart
-reportlab
-pytest
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+sqlalchemy==2.1.4
+httpx==0.28.1
+python-multipart==0.0.32
+reportlab==5.0.1
