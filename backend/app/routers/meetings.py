@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -8,8 +8,9 @@ from ..db import get_db
 from ..deps import current_user, get_meeting
 from ..models import Meeting, MeetingParticipant, Topic, User
 from ..schemas import MeetingFilters, MeetingOut, MeetingUpdate, ParticipantOut
-from ..services import parser
+from ..services import ai, parser
 from ..services.meetings import add_participant, create_from_lines
+from ..services.llm import registry
 from ..services.search import title_or_person_clause
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
@@ -53,10 +54,18 @@ async def create_meeting(
     title: str = Form(""),
     transcript: str = Form(""),
     file: UploadFile | None = File(None),
+    provider: str = Form(""),
+    model: str = Form(""),
+    background: BackgroundTasks = None,
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):
-    """Create a meeting from pasted text or an uploaded .txt/.vtt/.json file."""
+    """Create a meeting from pasted text or an uploaded .txt/.vtt/.json file.
+    It comes back as 'processing'; the notes are written in the background and the status becomes 'ready'."""
+    try:
+        registry.resolve(provider or None, model or None)  # fail now, not after the upload
+    except registry.ProviderUnavailable as e:
+        raise HTTPException(400, str(e)) from None
     filename = ""
     if file:
         data = await file.read(MAX_UPLOAD_BYTES + 1)
@@ -71,7 +80,8 @@ async def create_meeting(
     except ValueError as e:
         raise HTTPException(400, str(e)) from None
     title = title.strip() or filename.rsplit(".", 1)[0] or "Untitled meeting"
-    meeting = create_from_lines(db, user, title[:200], lines, source="upload" if file else "paste")
+    meeting = create_from_lines(db, user, title[:200], lines, source="upload" if file else "paste", status="processing")
+    background.add_task(ai.process_meeting, meeting.id, provider or None, model or None)
     return meeting_out(meeting)
 
 

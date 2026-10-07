@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_meeting
 from ..models import Meeting, NoteBullet, Summary
-from ..schemas import BulletOut, BulletUpdate, SummaryOut, SummaryUpdate
-from ..services import insights
+from ..schemas import AiChoice, BulletOut, BulletUpdate, RegenerateOut, SummaryOut, SummaryUpdate
+from ..services import ai, insights
+from ..services.llm.registry import ProviderUnavailable
 
 router = APIRouter(prefix="/api", tags=["notes"])
 
@@ -33,6 +34,17 @@ def edit_summary(body: SummaryUpdate, meeting: Meeting = Depends(get_meeting), d
     meeting.summary.overview = body.overview
     db.commit()
     return summary_out(meeting)
+
+
+@router.post("/meetings/{meeting_id}/summary/regenerate", response_model=RegenerateOut)
+def regenerate_summary(body: AiChoice | None = None, meeting: Meeting = Depends(get_meeting), db: Session = Depends(get_db)):
+    """Rewrite summary and sections, add any new tasks. Pick a provider and model, or use the default."""
+    body = body or AiChoice()
+    try:
+        info = ai.generate_notes(db, meeting, body.provider, body.model)
+    except ProviderUnavailable as e:
+        raise HTTPException(400, str(e)) from None
+    return RegenerateOut(**summary_out(meeting).model_dump(), ai=info)
 
 
 @router.patch("/note-bullets/{bullet_id}", response_model=BulletOut)

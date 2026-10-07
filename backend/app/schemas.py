@@ -150,3 +150,44 @@ class ActionItemUpdate(BaseModel):
 class TopicOut(BaseModel):
     name: str
     meeting_count: int
+
+
+class AiChoice(BaseModel):
+    provider: str | None = None
+    model: str | None = None
+
+
+class AiInfo(BaseModel):
+    provider: str
+    model: str
+    status: str  # ok | fallback (the chosen provider failed, the built-in logic answered)
+    error: str | None
+
+
+class RegenerateOut(SummaryOut):
+    ai: AiInfo
+
+
+class LlmProviderOut(BaseModel):
+    name: str
+    label: str
+    models: list[str]
+
+
+class LlmModelsOut(BaseModel):
+    default_provider: str
+    default_model: str
+    providers: list[LlmProviderOut]
+
+
+class AiRunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    meeting_id: int | None
+    task: str
+    provider: str
+    model: str
+    latency_ms: int
+    status: str
+    error: str | None
+    created_at: datetime

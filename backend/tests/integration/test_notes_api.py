@@ -16,8 +16,15 @@ def test_summary_has_overview_keywords_and_timestamped_sections(client):
 
 
 def test_meeting_without_notes_returns_empty_notes_not_an_error(client):
-    m = client.post("/api/meetings", data={"transcript": "Ana: just text"}).json()
-    s = client.get(f"/api/meetings/{m['id']}/summary").json()
+    from app.db import SessionLocal
+    from app.models import User
+    from app.services.meetings import create_from_lines
+    from app.services.parser import parse
+    from sqlalchemy import select
+    with SessionLocal() as db:  # created directly, so the background notes step never runs
+        m = create_from_lines(db, db.scalar(select(User)), "Raw", parse("Ana: just text"), "paste", status="processing")
+        mid = m.id
+    s = client.get(f"/api/meetings/{mid}/summary").json()
     assert s == {"overview": "", "keywords": [], "sections": []}
 
 
@@ -31,7 +38,13 @@ def test_edit_overview_and_bullet(client):
 
 
 def test_overview_can_be_written_for_a_meeting_that_had_none(client):
+    from app.db import SessionLocal
+    from app.models import Summary
+    from sqlalchemy import delete
     m = client.post("/api/meetings", data={"transcript": "Ana: text"}).json()
+    with SessionLocal() as db:
+        db.execute(delete(Summary).where(Summary.meeting_id == m["id"]))
+        db.commit()
     r = client.patch(f"/api/meetings/{m['id']}/summary", json={"overview": "Manual notes"})
     assert r.status_code == 200 and r.json()["overview"] == "Manual notes"
 

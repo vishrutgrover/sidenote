@@ -12,4 +12,4 @@ test-integration:
 	cd backend && ../$(PY)/python -m pytest tests/integration -q
 
 run:
-	cd backend && ../$(PY)/uvicorn app.main:app --reload
+	cd backend && ../$(PY)/uvicorn app.main:app --reload $(if $(wildcard backend/.env),--env-file .env)

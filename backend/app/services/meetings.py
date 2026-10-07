@@ -40,10 +40,10 @@ def add_participant(db: Session, meeting: Meeting, name: str, is_host: bool = Fa
     return seat
 
 
-def create_from_lines(db: Session, user: User, title: str, lines: list[Line], source: str) -> Meeting:
+def create_from_lines(db: Session, user: User, title: str, lines: list[Line], source: str, status: str = "ready") -> Meeting:
     """New meeting from parsed transcript lines. The first speaker is the host."""
     meeting = Meeting(
-        title=title, source=source, created_by=user.id, status="ready",
+        title=title, source=source, created_by=user.id, status=status,
         started_at=datetime.now(timezone.utc).replace(tzinfo=None),
         duration_sec=int(lines[-1].end) + 1,
     )
