@@ -26,3 +26,9 @@
   font-size: 18px;
   font-weight: 550;
 }
+.palette {
+  width: min(720px, calc(100vw - 32px));
+  max-height: 76vh;
+  margin: 10vh auto auto;
+  overflow: hidden;
+}
