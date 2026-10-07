@@ -12,8 +12,8 @@
   padding: 0 16px;
   border-bottom: 1px solid var(--border);
 }
-.menu {
-  margin-left: auto;
+.menuAfter {
+  margin-left: 4px;
 }
 .crumbs {
   display: flex;

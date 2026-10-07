@@ -12,6 +12,7 @@ import { BookmarksPanel } from "@/components/panels/BookmarksPanel";
 import { CommentsPanel } from "@/components/panels/CommentsPanel";
 import { SoundbitesPanel, type SoundbiteDraft } from "@/components/panels/SoundbitesPanel";
 import { SmartSearch } from "@/components/SmartSearch";
+import { useSearch } from "@/components/SearchProvider";
 import { useToast } from "@/components/Toast";
 import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { api, apiUrl, send } from "@/lib/api";
@@ -51,6 +52,7 @@ export default function MeetingPage() {
   };
   const { data: bookmarks = [], reload: reloadBookmarks } = useFetch<Bookmark[]>(`/api/meetings/${id}/bookmarks`);
   const toast = useToast();
+  const search = useSearch();
   const [panel, setPanel] = useState<Panel | null>("search");
   const [commentTarget, setCommentTarget] = useState<number | null>(null);
   const [draft, setDraft] = useState<SoundbiteDraft | null>(null);
@@ -111,7 +113,8 @@ export default function MeetingPage() {
           <span>/</span>
           <span>{meeting?.title ?? "…"}</span>
         </nav>
-        {meeting && <div className={styles.menu}><MeetingMenu meeting={meeting} onChanged={meetingChanged} onDeleted={() => router.push("/meetings")} /></div>}
+        <button className="btn btn-ghost btn-icon" style={{ marginLeft: "auto" }} onClick={search.open} aria-label="Open global search" title="Search all meetings (Cmd+K)"><Search size={16} /></button>
+        {meeting && <div className={styles.menuAfter}><MeetingMenu meeting={meeting} onChanged={meetingChanged} onDeleted={() => router.push("/meetings")} /></div>}
       </header>
 
       <div className={`${styles.body} ${panel ? styles.withPanel : ""}`}>

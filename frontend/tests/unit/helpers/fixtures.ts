@@ -107,3 +107,11 @@ export const llm: LlmModels = {
 };
 export const userMsg = (id: number, content: string, meeting_id: number | null = 1): ChatMessage => ({ id, meeting_id, role: "user", content, sources: [], provider: null, model: null, created_at: "2026-10-07T18:00:00" });
 export const botMsg = (id: number, content: string, over: Partial<ChatMessage> = {}): ChatMessage => ({ id, meeting_id: 1, role: "assistant", content, sources: [], provider: "mock", model: "heuristic", created_at: "2026-10-07T18:00:01", ...over });
+
+import type { SearchResult } from "@/lib/types";
+
+export const searchResults: SearchResult[] = [
+  { meeting: meeting({ id: 4, title: "Engineering Standup", participants: [host] }), title_match: false, hit_count: 5,
+    hits: [line(7, 31.2, "Liam, that's a bug worth fixing, since half our demo users are on Safari."), line(8, 48, "Safari is strict about byte ranges.")] },
+  { meeting: meeting({ id: 1, title: "Safari Weekly" }), title_match: true, hit_count: 0, hits: [] },
+];
