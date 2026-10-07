@@ -269,3 +269,26 @@ class AskOut(BaseModel):
     user: ChatMessageOut
     assistant: ChatMessageOut
     ai: AiInfo
+
+
+class PersonOut(BaseModel):
+    id: int
+    name: str
+    email: str | None
+    meeting_count: int
+    is_me: bool
+
+
+class PersonMeeting(BaseModel):
+    id: int
+    title: str
+    started_at: datetime
+    talk_sec: float
+    share_pct: int  # their share of all talking in that meeting
+
+
+class PersonDetail(PersonOut):
+    total_talk_sec: float
+    wpm: int
+    meetings: list[PersonMeeting]
+    open_tasks: list[ActionItemOut]
