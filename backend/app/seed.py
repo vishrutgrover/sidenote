@@ -1,5 +1,7 @@
 import json
+import re
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -10,7 +12,23 @@ from .services.meetings import COLORS, get_or_create_person, get_or_create_topic
 from .services.parser import PAUSE_SEC, WORDS_PER_SEC
 from .services.sentiment import guess_sentiment
 
+MEDIA_DIR = Path(__file__).resolve().parent.parent / "media"
+
 DEFAULT_USER = "Vishrut Grover"
+
+
+def layout(texts: list[str]) -> list[tuple[float, float]]:
+    """Start and end second of each line, one after another with a short pause. The sample audio uses this too."""
+    times, t = [], 0.0
+    for text in texts:
+        end = t + len(text.split()) / WORDS_PER_SEC
+        times.append((round(t, 1), round(end, 1)))
+        t = end + PAUSE_SEC
+    return times
+
+
+def slug(title: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
 
 
 def seed(db: Session) -> None:
@@ -44,16 +62,16 @@ def seed(db: Session) -> None:
         db.flush()
 
         # lay the lines out one after another, so each has a believable start and end
-        starts, t = [], 0.0
-        for speaker, text in data["lines"]:
-            end = t + len(text.split()) / WORDS_PER_SEC
+        times = layout([text for _, text in data["lines"]])
+        for (speaker, text), (start, end) in zip(data["lines"], times):
             db.add(Segment(
                 meeting_id=meeting.id, speaker_id=seats[speaker].id,
-                start_sec=round(t, 1), end_sec=round(end, 1), text=text, sentiment=guess_sentiment(text),
+                start_sec=start, end_sec=end, text=text, sentiment=guess_sentiment(text),
             ))
-            starts.append(round(t, 1))
-            t = end + PAUSE_SEC
-        meeting.duration_sec = int(t)
+        starts = [start for start, _ in times]
+        meeting.duration_sec = int(times[-1][1] + PAUSE_SEC)
+        if (MEDIA_DIR / f"{slug(data['title'])}.mp3").exists():  # sample audio is optional
+            meeting.media_url = f"/media/{slug(data['title'])}.mp3"
 
         db.add(Summary(meeting_id=meeting.id, overview=data["overview"], keywords=json.dumps(data["keywords"])))
 
