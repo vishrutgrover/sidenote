@@ -4,46 +4,13 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import (
-    ActionItem, Meeting, MeetingParticipant, NoteBullet, NoteSection, Person, Segment, Summary, Topic, User,
-)
+from .models import ActionItem, Meeting, MeetingParticipant, NoteBullet, NoteSection, Segment, Summary, User
 from .seed_data import MEETINGS
+from .services.meetings import COLORS, get_or_create_person, get_or_create_topic
+from .services.parser import PAUSE_SEC, WORDS_PER_SEC
+from .services.sentiment import guess_sentiment
 
 DEFAULT_USER = {"name": "Vishrut Grover", "email": "vishrut@example.com"}
-COLORS = ["#6C5CE7", "#00B894", "#E17055", "#0984E3", "#FDCB6E", "#E84393"]
-WORDS_PER_SEC = 2.8
-PAUSE_SEC = 1.5
-
-POSITIVE = ("great", "love", "good", "nice", "perfect", "happy", "like that")
-NEGATIVE = ("problem", "stuck", "worried", "risk", "slow", "bug", "blocker", "messy", "hurts")
-
-
-def guess_sentiment(text: str) -> str:
-    low = text.lower()
-    if any(w in low for w in NEGATIVE):
-        return "negative"
-    if any(w in low for w in POSITIVE):
-        return "positive"
-    return "neutral"
-
-
-def get_or_create_person(db: Session, name: str) -> Person:
-    person = db.scalar(select(Person).where(Person.name == name))
-    if not person:
-        email = name.lower().replace(" ", ".") + "@example.com"
-        person = Person(name=name, email=email)
-        db.add(person)
-        db.flush()
-    return person
-
-
-def get_or_create_topic(db: Session, name: str) -> Topic:
-    topic = db.scalar(select(Topic).where(Topic.name == name))
-    if not topic:
-        topic = Topic(name=name)
-        db.add(topic)
-        db.flush()
-    return topic
 
 
 def seed(db: Session) -> None:
