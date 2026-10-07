@@ -82,7 +82,7 @@
   flex-direction: column;
   gap: 0;
 }
-.title .muted {
+.title :global(.muted) {
   font-size: 12px;
 }
 .hit {

@@ -54,7 +54,7 @@
   margin-bottom: 6px;
   font-weight: 550;
 }
-.who .muted {
+.who :global(.muted) {
   font-size: 12px;
   font-weight: 400;
 }
@@ -84,7 +84,7 @@
   gap: 6px;
   margin-top: 8px;
 }
-.sources .chip {
+.sources :global(.chip) {
   border: 0;
   cursor: pointer;
 }
