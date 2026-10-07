@@ -9,7 +9,7 @@ from ..deps import current_user, get_meeting
 from ..models import Meeting, MeetingParticipant, Topic, User
 from ..schemas import MeetingFilters, MeetingOut, MeetingUpdate, ParticipantOut
 from ..services import ai, parser
-from ..services.meetings import add_participant, create_from_lines
+from ..services.meetings import add_participant, create_from_lines, prune_orphan_people
 from ..services.llm import registry
 from ..services.search import title_or_person_clause
 
@@ -112,6 +112,7 @@ def update_meeting(body: MeetingUpdate, meeting: Meeting = Depends(get_meeting),
                 add_participant(db, meeting, name)
                 have.add(name)
     db.commit()
+    prune_orphan_people(db)
     return meeting_out(meeting)
 
 
@@ -119,4 +120,5 @@ def update_meeting(body: MeetingUpdate, meeting: Meeting = Depends(get_meeting),
 def delete_meeting(meeting: Meeting = Depends(get_meeting), db: Session = Depends(get_db)):
     db.delete(meeting)
     db.commit()
+    prune_orphan_people(db)
     return Response(status_code=204)

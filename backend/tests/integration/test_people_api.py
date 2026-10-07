@@ -90,3 +90,56 @@ def test_someone_who_never_spoke_has_an_empty_profile(client):
 def test_unknown_person_is_404(client):
     assert client.get("/api/people/99999").status_code == 404
     assert client.get("/api/people/abc").status_code == 422
+
+
+# ---- people who are in no meeting any more ---------------------------------------
+
+PASTE = "Zed Zimmer: hello there\nYuri Yates: hi Zed"
+
+
+def names(client):
+    return {p["name"] for p in client.get("/api/people").json()}
+
+
+def test_deleting_a_meeting_removes_people_who_were_only_in_it(client):
+    m = client.post("/api/meetings", data={"transcript": PASTE}).json()
+    assert {"Zed Zimmer", "Yuri Yates"} <= names(client)
+    client.delete(f"/api/meetings/{m['id']}")
+    assert not ({"Zed Zimmer", "Yuri Yates"} & names(client))
+
+
+def test_sample_people_are_all_still_there_after_a_delete(client):
+    before = names(client)
+    m = client.post("/api/meetings", data={"transcript": PASTE}).json()
+    client.delete(f"/api/meetings/{m['id']}")
+    assert names(client) == before
+
+
+def test_people_who_are_in_another_meeting_are_kept(client):
+    a = client.post("/api/meetings", data={"transcript": PASTE}).json()
+    b = client.post("/api/meetings", data={"transcript": "Zed Zimmer: second meeting"}).json()
+    client.delete(f"/api/meetings/{a['id']}")
+    assert "Zed Zimmer" in names(client) and "Yuri Yates" not in names(client)
+    client.delete(f"/api/meetings/{b['id']}")
+    assert "Zed Zimmer" not in names(client)
+
+
+def test_removing_someone_from_a_meeting_removes_them_too_if_it_was_their_only_one(client):
+    m = client.post("/api/meetings", data={"transcript": PASTE}).json()
+    client.patch(f"/api/meetings/{m['id']}", json={"participants": ["Zed Zimmer"]})
+    assert "Yuri Yates" not in names(client) and "Zed Zimmer" in names(client)
+
+
+def test_the_logged_in_person_is_never_removed_even_with_no_meetings(client):
+    for m in client.get("/api/meetings").json():
+        client.delete(f"/api/meetings/{m['id']}")
+    assert names(client) == {"Vishrut Grover"}
+    assert client.get("/api/people").json()[0]["is_me"] is True
+    assert client.get("/api/me").json()["person_id"] == client.get("/api/people").json()[0]["id"]
+
+
+def test_a_removed_person_has_no_profile(client):
+    m = client.post("/api/meetings", data={"transcript": PASTE}).json()
+    pid = next(p["id"] for p in client.get("/api/people").json() if p["name"] == "Zed Zimmer")
+    client.delete(f"/api/meetings/{m['id']}")
+    assert client.get(f"/api/people/{pid}").status_code == 404
