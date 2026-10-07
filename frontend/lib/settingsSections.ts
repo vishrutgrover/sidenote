@@ -1,6 +1,6 @@
 import { Bell, BookOpen, Code, Cookie, IdCard, Lock, Mail, SlidersHorizontal, Sparkles, Video, Wand2 } from "lucide-react";
 
-export type SettingsSection = { id: string; label: string; icon: typeof Bell; ready: boolean; group: number; blurb: string };
+type SettingsSection = { id: string; label: string; icon: typeof Bell; ready: boolean; group: number; blurb: string };
 
 // Appearance and AI settings work; the rest are placeholders so the page looks like the real product.
 export const SETTINGS_SECTIONS: SettingsSection[] = [

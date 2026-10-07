@@ -1,4 +1,4 @@
-.PHONY: install test test-unit test-integration test-frontend test-e2e test-all run run-frontend
+.PHONY: install test test-unit test-integration test-frontend test-e2e test-all run run-frontend screenshots audio
 
 PY = backend/.venv/bin
 
@@ -31,3 +31,10 @@ run:                 ## backend on :8000 (uses backend/.env if it exists)
 
 run-frontend:        ## frontend on :3000
 	cd frontend && npm run dev
+
+# ---- generated files (see docs/GENERATED.md) ----
+screenshots:         ## redraw docs/media/*.png from the running app (start both servers first)
+	cd frontend && node scripts/readme-screenshots.mjs ../docs/media
+
+audio:               ## rebuild backend/media/*.mp3 from the sample transcripts (macOS + ffmpeg)
+	cd backend && ../$(PY)/python -m scripts.make_sample_audio

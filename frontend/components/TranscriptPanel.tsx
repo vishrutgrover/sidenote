@@ -8,9 +8,9 @@ import type { Segment } from "@/lib/types";
 import type { Player } from "@/lib/usePlayer";
 import styles from "./TranscriptPanel.module.css";
 
-/** The transcript with a find bar. Click a line to jump there; the line being spoken follows playback. */
 type Props = { meetingId: number; lines: Segment[]; loading: boolean; error?: string; player: Player; onComment?: (segmentId: number) => void; onSoundbite?: (start: number, end: number) => void };
 
+/** The transcript with a find bar. Click a line to jump there; the line being spoken follows playback. */
 export function TranscriptPanel({ meetingId, lines, loading, error, player, onComment, onSoundbite }: Props) {
   const base = `/api/meetings/${meetingId}/transcript`;
 

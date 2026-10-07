@@ -10,12 +10,3 @@ export function LogoMark({ size = 24 }: { size?: number }) {
     </svg>
   );
 }
-
-export function Logo() {
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 650, fontSize: 16 }}>
-      <LogoMark />
-      Sidenote
-    </span>
-  );
-}

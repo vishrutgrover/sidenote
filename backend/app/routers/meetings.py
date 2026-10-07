@@ -56,12 +56,12 @@ def list_meetings(f: Annotated[MeetingFilters, Query()], db: Session = Depends(g
 
 @router.post("", response_model=MeetingOut, status_code=201)
 async def create_meeting(
+    background: BackgroundTasks,  # FastAPI supplies this; it runs a job after the response is sent
     title: str = Form(""),
     transcript: str = Form(""),
     file: UploadFile | None = File(None),
     provider: str = Form(""),
     model: str = Form(""),
-    background: BackgroundTasks = None,
     db: Session = Depends(get_db),
     user: User = Depends(current_user),
 ):

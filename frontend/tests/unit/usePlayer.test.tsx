@@ -159,6 +159,22 @@ describe("usePlayer with a recording", () => {
     expect(result.current.time).toBe(12.5);
   });
 
+  it("skip moves from where the audio actually is, not from the last seek", () => {
+    const { result } = renderHook(() => usePlayer(120, "/media/a.mp3"));
+    act(() => { instances[0].currentTime = 30; instances[0].dispatchEvent(new Event("timeupdate")); }); // playing, now at 30 s
+    act(() => result.current.skip(10));
+    expect(instances[0].currentTime).toBe(40);
+    act(() => result.current.skip(-5));
+    expect(instances[0].currentTime).toBe(35);
+  });
+
+  it("pressing play at the very end starts again from the beginning", () => {
+    const { result } = renderHook(() => usePlayer(60, "/media/a.mp3"));
+    act(() => { instances[0].currentTime = 59.99; instances[0].dispatchEvent(new Event("timeupdate")); });
+    act(() => result.current.play());
+    expect(instances[0].currentTime).toBe(0);
+  });
+
   it("uses the recording's own length once it is known", () => {
     const { result } = renderHook(() => usePlayer(60, "/media/a.mp3"));
     expect(result.current.duration).toBe(60);

@@ -62,6 +62,19 @@ test("skip buttons and keyboard shortcuts", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
 });
 
+test("skip and the arrow keys move from where the audio is now, not from the start", async ({ page }) => {
+  await page.getByRole("button", { name: "Play" }).click();
+  await expect.poll(() => seconds(page), { timeout: 8000 }).toBeGreaterThanOrEqual(2);
+  await page.getByRole("button", { name: "Pause" }).click();
+  await page.waitForTimeout(400);
+  const before = await seconds(page);
+  await page.getByRole("button", { name: "Forward 10 seconds" }).click();
+  await expect.poll(() => seconds(page)).toBeGreaterThanOrEqual(before + 10);
+  expect(await seconds(page)).toBeLessThanOrEqual(before + 12); // 10 s on from where it was, not 10 s from zero
+  await page.getByRole("button", { name: "Back 10 seconds" }).click();
+  await expect.poll(() => seconds(page)).toBeLessThanOrEqual(before + 2);
+});
+
 test("speed cycles through the options", async ({ page }) => {
   const speed = page.getByTitle("Playback speed");
   await expect(speed).toHaveText("1×");

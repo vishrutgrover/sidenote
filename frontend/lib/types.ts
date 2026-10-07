@@ -26,7 +26,7 @@ export type Segment = {
   comment_count: number;
 };
 
-export type Bullet = { id: number; text: string; timestamp_sec: number | null };
+type Bullet = { id: number; text: string; timestamp_sec: number | null };
 export type Section = { id: number; title: string; bullets: Bullet[] };
 export type Summary = { overview: string; keywords: string[]; sections: Section[] };
 
