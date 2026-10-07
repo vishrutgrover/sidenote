@@ -25,7 +25,7 @@ export function mockApi(routes: Record<string, Handler>) {
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
     const path = String(input).replace(/^https?:\/\/[^/]+/, "");
     calls.push(path);
-    requests.push({ method: init?.method ?? "GET", path, body: init?.body ? JSON.parse(String(init.body)) : undefined });
+    requests.push({ method: init?.method ?? "GET", path, body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body }); // a FormData body is kept as it is
     const key = Object.keys(routes).sort((a, b) => b.length - a.length).find((k) => path.startsWith(k));
     if (!key) return new Response(JSON.stringify({ detail: `no mock for ${path}` }), { status: 404 });
     const value = routes[key];

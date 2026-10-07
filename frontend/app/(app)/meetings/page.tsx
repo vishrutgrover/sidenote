@@ -4,6 +4,7 @@ import { Search, X } from "lucide-react";
 import { ChannelList } from "@/components/ChannelList";
 import { FilterPopover } from "@/components/FilterPopover";
 import { MeetingCard } from "@/components/MeetingCard";
+import { MeetingMenu } from "@/components/MeetingMenu";
 import { useDebounced, useFetch } from "@/lib/hooks";
 import { dayLabel } from "@/lib/format";
 import { activeFilterCount, DATE_LABELS, DURATION_LABELS, NO_FILTERS, toggle, toQuery, type Filters } from "@/lib/meetingFilters";
@@ -113,7 +114,7 @@ export default function MeetingsPage() {
                 <section key={label} className={styles.group}>
                   <h2>{label}</h2>
                   {group.map((m) => (
-                    <MeetingCard key={m.id} meeting={m} />
+                    <MeetingCard key={m.id} meeting={m} actions={<MeetingMenu meeting={m} onChanged={reload} onDeleted={reload} />} />
                   ))}
                 </section>
               ))}

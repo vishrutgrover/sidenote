@@ -1,0 +1,72 @@
+.form {
+  display: grid;
+  gap: 16px;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: var(--radius);
+  background: var(--bg-muted);
+}
+.tabs button {
+  flex: 1;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+.tabs .on {
+  background: var(--bg);
+  color: var(--ink);
+  font-weight: 500;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  font-weight: 500;
+}
+.field span,
+.field code {
+  font-weight: 400;
+  font-size: 12px;
+}
+.drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 16px;
+  border: 1.5px dashed var(--primary);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  cursor: pointer;
+}
+.drop input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.dragging {
+  background: var(--primary-soft);
+}
+.error {
+  margin: 0;
+  color: var(--danger);
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

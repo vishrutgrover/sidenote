@@ -1,8 +1,9 @@
 "use client";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronLeft, Search, Sparkles } from "lucide-react";
+import { MeetingMenu } from "@/components/MeetingMenu";
 import { NotesPanel } from "@/components/NotesPanel";
 import { PlayerBar } from "@/components/PlayerBar";
 import { SmartSearch } from "@/components/SmartSearch";
@@ -19,13 +20,20 @@ const typingIn = (e: KeyboardEvent) => e.target instanceof HTMLElement && (["INP
 
 export default function MeetingPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { data: meeting, error, reload } = useFetch<Meeting>(`/api/meetings/${id}`);
-  const { data: lines = [], loading: linesLoading, error: linesError } = useFetch<Segment[]>(`/api/meetings/${id}/transcript`);
+  const { data: lines = [], loading: linesLoading, error: linesError, reload: reloadLines } = useFetch<Segment[]>(`/api/meetings/${id}/transcript`);
   const { data: items = [], reload: reloadItems } = useFetch<ActionItem[]>(`/api/meetings/${id}/action-items`);
   const { data: insights, reload: reloadInsights } = useFetch<Insights>(`/api/meetings/${id}/insights`);
   const itemsChanged = () => {
     reloadItems();
     reloadInsights();
+  };
+  // renaming or changing people also changes speaker names in the transcript and the numbers beside it
+  const meetingChanged = () => {
+    reload();
+    reloadLines();
+    itemsChanged();
   };
   const [panel, setPanel] = useState<"search" | null>("search");
   const player = usePlayer(meeting?.duration_sec ?? 0, meeting?.media_url ? apiUrl(meeting.media_url) : null);
@@ -62,6 +70,7 @@ export default function MeetingPage() {
           <span>/</span>
           <span>{meeting?.title ?? "…"}</span>
         </nav>
+        {meeting && <div className={styles.menu}><MeetingMenu meeting={meeting} onChanged={meetingChanged} onDeleted={() => router.push("/meetings")} /></div>}
       </header>
 
       <div className={`${styles.body} ${panel ? styles.withPanel : ""}`}>
