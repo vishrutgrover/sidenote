@@ -6,10 +6,11 @@ from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import current_user, get_meeting
-from ..models import Meeting, MeetingParticipant, Person, Topic, User
+from ..models import Meeting, MeetingParticipant, Topic, User
 from ..schemas import MeetingFilters, MeetingOut, MeetingUpdate, ParticipantOut
 from ..services import parser
 from ..services.meetings import add_participant, create_from_lines
+from ..services.search import title_or_person_clause
 
 router = APIRouter(prefix="/api/meetings", tags=["meetings"])
 
@@ -20,11 +21,7 @@ def meeting_out(m: Meeting) -> MeetingOut:
     return MeetingOut(
         id=m.id, title=m.title, started_at=m.started_at, duration_sec=m.duration_sec, status=m.status,
         source=m.source, media_url=m.media_url, overview=m.summary.overview if m.summary else "",
-        participants=[
-            ParticipantOut(id=p.id, person_id=p.person_id, name=p.person.name, email=p.person.email,
-                           color=p.color, is_host=p.is_host)
-            for p in m.participants
-        ],
+        participants=[ParticipantOut.from_seat(p) for p in m.participants],
         topics=[t.name for t in m.topics],
     )
 
@@ -33,8 +30,7 @@ def meeting_out(m: Meeting) -> MeetingOut:
 def list_meetings(f: Annotated[MeetingFilters, Query()], db: Session = Depends(get_db)):
     stmt = select(Meeting)
     if f.q:
-        by_person = select(MeetingParticipant.meeting_id).join(Person).where(Person.name.icontains(f.q, autoescape=True))
-        stmt = stmt.where(Meeting.title.icontains(f.q, autoescape=True) | Meeting.id.in_(by_person))
+        stmt = stmt.where(title_or_person_clause(f.q))
     if f.participant:
         stmt = stmt.where(Meeting.id.in_(
             select(MeetingParticipant.meeting_id).where(MeetingParticipant.person_id.in_(f.participant))))
