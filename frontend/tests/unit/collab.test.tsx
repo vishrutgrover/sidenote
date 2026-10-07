@@ -237,7 +237,7 @@ describe("BookmarksPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Bookmark 01:15" }));
     await waitFor(() => expect(calls.requests).toHaveLength(2));
     expect(calls.requests![1].body).toMatchObject({ note: "big idea" });
-    expect(screen.getByLabelText("Bookmark note")).toHaveValue("");
+    await waitFor(() => expect(screen.getByLabelText("Bookmark note")).toHaveValue("")); // cleared once the save has finished
   });
 
   it("deletes one and explains an empty list", async () => {

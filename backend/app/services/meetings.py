@@ -1,7 +1,7 @@
 """Shared meeting helpers, used by both the seed script and the API."""
 from datetime import datetime, timezone
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..models import Meeting, MeetingParticipant, Person, Segment, Topic, User
@@ -59,3 +59,12 @@ def create_from_lines(db: Session, user: User, title: str, lines: list[Line], so
         ))
     db.commit()
     return meeting
+
+
+def prune_orphan_people(db: Session) -> None:
+    """Remove people who are in no meeting any more, so the People page never lists ghosts.
+    The logged-in person is kept even with no meetings."""
+    in_a_meeting = select(MeetingParticipant.person_id)
+    is_me = select(User.person_id).where(User.person_id.is_not(None))
+    db.execute(delete(Person).where(Person.id.not_in(in_a_meeting), Person.id.not_in(is_me)))
+    db.commit()
