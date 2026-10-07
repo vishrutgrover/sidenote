@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
 
 def to_utc_naive(d: datetime) -> datetime:
     """The database keeps naive UTC, so convert any timezone-aware input to that."""
@@ -79,3 +79,74 @@ class SearchResult(BaseModel):
     title_match: bool
     hit_count: int
     hits: list[SegmentOut]  # first few matching lines
+
+
+class BulletOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)  # lets the ORM row be passed in directly
+
+    id: int
+    text: str
+    timestamp_sec: float | None
+
+
+class SectionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    bullets: list[BulletOut]
+
+
+class SummaryOut(BaseModel):
+    overview: str
+    keywords: list[str]
+    sections: list[SectionOut]
+
+
+class SummaryUpdate(BaseModel):
+    overview: Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)]
+
+
+class BulletUpdate(BaseModel):
+    text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
+
+
+ActionText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
+
+
+class ActionItemOut(BaseModel):
+    id: int
+    meeting_id: int
+    meeting_title: str
+    text: str
+    assignee: ParticipantOut | None
+    timestamp_sec: float | None
+    due_date: datetime | None
+    is_done: bool
+
+    @classmethod
+    def from_item(cls, a):
+        return cls(id=a.id, meeting_id=a.meeting_id, meeting_title=a.meeting.title, text=a.text,
+                   assignee=ParticipantOut.from_seat(a.assignee) if a.assignee else None,
+                   timestamp_sec=a.timestamp_sec, due_date=a.due_date, is_done=a.is_done)
+
+
+class ActionItemCreate(BaseModel):
+    text: ActionText
+    assignee_id: int | None = None  # a seat id from the meeting's participants
+    timestamp_sec: float | None = Field(None, ge=0)
+    due_date: UtcTime | None = None
+
+
+class ActionItemUpdate(BaseModel):
+    """Only the fields sent are changed, so null really means 'clear it'."""
+    text: ActionText | None = None
+    assignee_id: int | None = None
+    timestamp_sec: float | None = Field(None, ge=0)
+    due_date: UtcTime | None = None
+    is_done: bool | None = None
+
+
+class TopicOut(BaseModel):
+    name: str
+    meeting_count: int
