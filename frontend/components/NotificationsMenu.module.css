@@ -1,0 +1,61 @@
+.wrap {
+  position: relative;
+}
+.wrap button {
+  position: relative;
+}
+.dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+}
+.menu {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  z-index: 30;
+  width: 380px;
+  max-height: 70vh;
+  padding: 12px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  box-shadow: var(--shadow);
+}
+.menu h2 {
+  padding: 4px 8px 10px;
+  font-size: 14px;
+  font-weight: 550;
+}
+.item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: var(--radius);
+}
+.item:hover {
+  background: var(--bg-muted);
+}
+.item svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--primary);
+}
+.item div {
+  display: flex;
+  flex-direction: column;
+}
+.item span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.empty {
+  padding: 20px 8px;
+  color: var(--muted);
+  text-align: center;
+}
