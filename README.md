@@ -7,7 +7,7 @@ Browse your meetings, read AI notes and action items, click any line of the tran
 
 <!-- DEMO VIDEO: the product b-roll is added here once it is recorded -->
 
-[**Live demo**](#deploy) · [Features](#what-it-does) · [Run it](#run-it) · [How it works](#how-it-works) · [Explain it](docs/EXPLAINED.md)
+[**Live demo**](https://sidenote-kappa.vercel.app) · [Features](#what-it-does) · [Run it](#run-it) · [How it works](#how-it-works) · [Explain it](docs/EXPLAINED.md)
 
 <img src="docs/media/meeting.png" alt="A meeting: Smart Search, notes with action items, and a transcript that follows the audio" width="900">
 
@@ -148,7 +148,7 @@ Some tests check the tests: breaking the code on purpose and confirming a test f
 
 **Frontend on Vercel.** Import the repo, set the root directory to `frontend`, add `NEXT_PUBLIC_API_URL` = your Render address (no trailing slash).
 
-After the free tier has been idle, the first request can take up to a minute while the API wakes up.
+After the free tier has been idle, the first request can take up to a minute while the API wakes up. Meetings you add to the live demo are not kept across restarts; the six sample meetings always come back.
 
 ## Project layout
 
