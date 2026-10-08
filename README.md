@@ -5,7 +5,9 @@
 **Meeting notes you can search, question and play back.**
 Browse your meetings, read AI notes and action items, click any line of the transcript to hear it, and ask what was said.
 
-<!-- DEMO VIDEO: the product b-roll is added here once it is recorded -->
+<a href="docs/media/sidenote-demo.mp4"><img src="docs/media/demo-poster.png" alt="Watch the 40 second demo" width="900"></a>
+
+**[▶ Watch the 40 second demo](docs/media/sidenote-demo.mp4)**
 
 [**Live demo**](https://sidenote-kappa.vercel.app) · [Features](#what-it-does) · [Run it](#run-it) · [How it works](#how-it-works) · [Explain it](docs/EXPLAINED.md)
 
