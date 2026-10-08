@@ -22,9 +22,9 @@ def test_a_key_enables_its_provider_and_makes_it_the_default(monkeypatch):
 
 
 def test_every_key_based_provider_turns_on_with_its_own_variable(monkeypatch):
-    for var in ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY", "OPENROUTER_API_KEY", "OLLAMA_BASE_URL"]:
+    for var in ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY", "OPENROUTER_API_KEY", "OLLAMA_BASE_URL"]:
         monkeypatch.setenv(var, "x")
-    assert names() == ["anthropic", "openai", "gemini", "groq", "openrouter", "ollama", "mock"]
+    assert names() == ["anthropic", "openai", "gemini", "groq", "deepseek", "openrouter", "ollama", "mock"]
 
 
 def test_blank_key_counts_as_not_configured(monkeypatch):
@@ -89,3 +89,12 @@ def test_base_url_setting_points_openai_at_another_server(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "k")
     monkeypatch.setenv("OPENAI_BASE_URL", "http://localhost:1234/v1/")
     assert registry.all_providers()["openai"].base_url == "http://localhost:1234/v1"
+
+
+def test_deepseek_is_an_openai_style_provider_with_its_own_address_and_models(monkeypatch):
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "k")
+    p = registry.all_providers()["deepseek"]
+    assert p.enabled and p.base_url == "https://api.deepseek.com/v1"
+    assert p.models == ["deepseek-v4-flash", "deepseek-v4-pro"]  # the first one is the default
+    monkeypatch.setenv("DEEPSEEK_MODELS", "my-model")
+    assert registry.all_providers()["deepseek"].models == ["my-model"]

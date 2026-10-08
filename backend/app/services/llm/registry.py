@@ -2,7 +2,7 @@
 
 Settings come from environment variables, read on every call so changes apply without a restart:
   LLM_PROVIDER / LLM_MODEL            defaults (optional)
-  ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY
+  ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, DEEPSEEK_API_KEY, OPENROUTER_API_KEY
   OPENAI_BASE_URL, OLLAMA_BASE_URL    point at another OpenAI-compatible server
   <PROVIDER>_MODELS                   comma separated list, replaces the built-in model list
 """
@@ -37,6 +37,8 @@ def all_providers() -> dict[str, LLMProvider]:
         Gemini(e("GEMINI_API_KEY"), models("GEMINI_MODELS", ["gemini-2.0-flash"])),
         OpenAICompatible("groq", "Groq", "https://api.groq.com/openai/v1", e("GROQ_API_KEY"),
                          models("GROQ_MODELS", ["llama-3.3-70b-versatile"]), bool(e("GROQ_API_KEY"))),
+        OpenAICompatible("deepseek", "DeepSeek", "https://api.deepseek.com/v1", e("DEEPSEEK_API_KEY"),
+                         models("DEEPSEEK_MODELS", ["deepseek-v4-flash", "deepseek-v4-pro"]), bool(e("DEEPSEEK_API_KEY"))),
         OpenAICompatible("openrouter", "OpenRouter", "https://openrouter.ai/api/v1", e("OPENROUTER_API_KEY"),
                          models("OPENROUTER_MODELS", ["openai/gpt-4o-mini"]), bool(e("OPENROUTER_API_KEY"))),
         OpenAICompatible("ollama", "Ollama (local)", e("OLLAMA_BASE_URL", "http://localhost:11434/v1"), None,
