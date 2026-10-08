@@ -75,3 +75,18 @@
   font-size: 12px;
   text-align: center;
 }
+@media (max-width: 800px) {
+  .main {
+    padding: 12px 12px 40px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .search {
+    flex-basis: 100%;
+    max-width: none;
+    order: 3;
+    margin-left: 0;
+  }
+}
