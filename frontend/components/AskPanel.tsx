@@ -98,7 +98,7 @@ export function AskPanel({ meetingId, onSeek, greeting }: Props) {
                   const Tag = b.kind === "li" ? "li" : "p";
                   return (
                     <Tag key={i}>
-                      {b.parts.map((p, k) => typeof p === "string" ? p : (
+                      {b.parts.map((p, k) => typeof p === "string" ? p : "bold" in p ? <strong key={k}>{p.bold}</strong> : (
                         onSeek ? <button key={k} className={styles.cite} onClick={() => onSeek(p.time)} title="Jump to this moment">{p.label}</button> : p.label
                       ))}
                     </Tag>

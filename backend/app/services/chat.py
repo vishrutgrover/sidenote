@@ -12,12 +12,13 @@ from .search import top_segments
 
 ASK_SYSTEM = (
     "You answer questions about meetings using only the transcript provided. "
-    "Cite the moments you rely on as [mm:ss]. If the transcript does not contain the answer, say so plainly. Be concise. "
+    "Cite the moments you rely on as [mm:ss], one bracket per moment. Write plain sentences and short '- ' bullets, no headings. If the transcript does not contain the answer, say so plainly. Be concise. "
     "If the question is not about the meetings, say you can only help with them."
     + ai.GUARDRAILS
 )
 HISTORY_TURNS = 6
-TIME_REF = re.compile(r"\[(\d+):(\d{2})\]")
+TIME_REF = re.compile(r"(\d+):(\d{2})")
+CITATION = re.compile(r"\[(\d+:\d{2}(?:,\s*\d+:\d{2})*)\]")  # [01:23] or [00:25, 01:14]
 SUMMARY_Q = re.compile(r"summar|overview|recap", re.I)
 TASKS_Q = re.compile(r"action item|to-?dos?|tasks?", re.I)
 
@@ -41,7 +42,7 @@ def seg_line(db: Session, seg, show_meeting: bool) -> str:
 def cited_line_ids(meeting: Meeting, answer: str) -> list[int]:
     """Lines whose time the answer mentions, e.g. [02:40], so the page can link to them."""
     ids = []
-    for m in TIME_REF.finditer(answer):
+    for m in (t for c in CITATION.findall(answer) for t in TIME_REF.finditer(c)):
         t = int(m.group(1)) * 60 + int(m.group(2))
         seg = max((s for s in meeting.segments if s.start_sec < t + 1), key=lambda s: s.start_sec, default=None)
         if seg and seg.id not in ids:
