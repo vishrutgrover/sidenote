@@ -84,3 +84,14 @@
     opacity: 1;
   }
 }
+@media (max-width: 800px) {
+  .details {
+    display: none; /* the whole card is already a link */
+  }
+  .card {
+    padding: 12px;
+  }
+  .side {
+    padding: 12px 10px 0 0;
+  }
+}

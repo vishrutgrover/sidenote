@@ -39,3 +39,40 @@
   gap: 12px;
   margin-left: auto;
 }
+
+.menu {
+  display: none;
+}
+@media (max-width: 800px) {
+  .menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .bar {
+    gap: 8px;
+    padding: 0 10px;
+  }
+  .title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search {
+    flex: 1;
+    min-width: 0;
+  }
+  .search span,
+  .search kbd {
+    display: none;
+  }
+  .search {
+    flex: none;
+    width: 34px;
+    justify-content: center;
+    padding: 0;
+  }
+  .right {
+    gap: 6px;
+  }
+}

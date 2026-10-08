@@ -247,3 +247,14 @@ mark {
   color: inherit;
   border-radius: 2px;
 }
+
+@media (max-width: 800px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* anything smaller makes iPhones zoom in when you tap a field */
+  }
+}

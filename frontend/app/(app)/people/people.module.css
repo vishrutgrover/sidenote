@@ -24,6 +24,7 @@
 }
 .grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   margin: 0;
   padding: 0;
@@ -50,6 +51,9 @@
 }
 .count {
   white-space: nowrap;
+}
+.person > span:nth-child(2) {
+  min-width: 0;
 }
 .back {
   display: inline-flex;

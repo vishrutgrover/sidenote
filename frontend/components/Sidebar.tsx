@@ -5,6 +5,7 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useFetch, useLocalStorage } from "@/lib/hooks";
 import { initials } from "@/lib/format";
 import type { Me } from "@/lib/types";
+import { useNavDrawer } from "./NavDrawer";
 import { LogoMark } from "./Logo";
 import { NAV, NAV_BOTTOM, type NavItem } from "./nav";
 import styles from "./Sidebar.module.css";
@@ -13,6 +14,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: me } = useFetch<Me>("/api/me");
   const [state, setState] = useLocalStorage<"open" | "collapsed">("sidebar", "open");
+  const { open, setOpen } = useNavDrawer();
   const collapsed = state === "collapsed";
   const toggle = () => setState(collapsed ? "open" : "collapsed");
 
@@ -28,7 +30,9 @@ export function Sidebar() {
   };
 
   return (
-    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`} aria-label="Main navigation">
+    <>
+    {open && <div className={styles.scrim} onClick={() => setOpen(false)} aria-hidden />}
+    <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""} ${open ? styles.open : ""}`} aria-label="Main navigation">
       <div className={styles.head}>
         <Link href="/" aria-label="Sidenote home" className={styles.brand}>
           <LogoMark size={26} />
@@ -57,5 +61,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

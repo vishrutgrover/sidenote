@@ -1,11 +1,13 @@
 import { CaptureMenu } from "@/components/CaptureMenu";
 import { NotificationsMenu } from "@/components/NotificationsMenu";
+import { NavDrawerProvider } from "@/components/NavDrawer";
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import styles from "./shell.module.css";
 
 export default function ShellLayout({ children }: { children: React.ReactNode }) {
   return (
+    <NavDrawerProvider>
     <div className={styles.shell}>
       <Sidebar />
       <div className={styles.main}>
@@ -16,5 +18,6 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
         <main className={styles.content}>{children}</main>
       </div>
     </div>
+    </NavDrawerProvider>
   );
 }

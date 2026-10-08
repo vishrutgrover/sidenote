@@ -41,7 +41,7 @@ export function MeetingCard({ meeting: m, actions }: { meeting: Meeting; actions
       </Link>
       <div className={styles.side}>
         {actions}
-        <Link href={`/view/${m.id}`} className="btn" tabIndex={-1}>
+        <Link href={`/view/${m.id}`} className={`btn ${styles.details}`} tabIndex={-1}>
           Details <ChevronRight size={14} />
         </Link>
       </div>
