@@ -1,6 +1,7 @@
 import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useDebounced, useFetch, useHotkey, useLocalStorage } from "@/lib/hooks";
+import { renderToString } from "react-dom/server";
+import { useBrowserValue, useDebounced, useFetch, useHotkey, useLocalStorage } from "@/lib/hooks";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
@@ -164,5 +165,22 @@ describe("useHotkey", () => {
     fireEvent.keyDown(document, { key: "k", ctrlKey: true });
     expect(second).toHaveBeenCalledOnce();
     expect(screen.queryByText("probe")).toBeNull();
+  });
+});
+
+
+describe("useBrowserValue", () => {
+  function Clock() {
+    return <p>{useBrowserValue(() => "browser says " + "afternoon", "server guess")}</p>;
+  }
+
+  it("the server renders only the neutral fallback, so it can never show the wrong time of day", () => {
+    expect(renderToString(<Clock />)).toContain("server guess");
+    expect(renderToString(<Clock />)).not.toContain("afternoon");
+  });
+
+  it("in the browser it shows the browser's own value", () => {
+    render(<Clock />);
+    expect(screen.getByText("browser says afternoon")).toBeInTheDocument();
   });
 });

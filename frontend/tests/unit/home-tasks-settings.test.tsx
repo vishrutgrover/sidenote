@@ -274,6 +274,16 @@ describe("Home", () => {
     return calls;
   };
 
+  it.each([[3, "Good Night"], [9, "Good Morning"], [14, "Good Afternoon"], [18, "Good Evening"], [22, "Good Night"]])("at %s o'clock the browser says %s", async (hour, hello) => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date(2026, 9, 7, hour, 30) });
+    try {
+      open();
+      expect(await screen.findByRole("heading", { level: 2, name: `${hello}, Vishrut` })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("greets you by first name", async () => {
     open();
     expect(await screen.findByRole("heading", { level: 2, name: /Good (Morning|Afternoon|Evening|Night), Vishrut$/ })).toBeInTheDocument();
