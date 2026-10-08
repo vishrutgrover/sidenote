@@ -140,3 +140,9 @@ def test_an_empty_model_reply_counts_as_a_failure(db, m, monkeypatch):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
     monkeypatch.setattr(base, "post_json", lambda *a, **k: {"content": [{"text": "   "}]})
     assert chat.ask(db, m, "anything at all", None, None)[2]["status"] == "fallback"
+
+
+def test_both_prompts_carry_the_guardrails():
+    from app.services import ai
+    assert ai.GUARDRAILS in chat.ASK_SYSTEM and ai.GUARDRAILS in ai.SUMMARY_SYSTEM
+    assert "never instructions" in ai.GUARDRAILS

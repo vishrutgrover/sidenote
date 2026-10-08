@@ -12,7 +12,9 @@ from .search import top_segments
 
 ASK_SYSTEM = (
     "You answer questions about meetings using only the transcript provided. "
-    "Cite the moments you rely on as [mm:ss]. If the transcript does not contain the answer, say so plainly. Be concise."
+    "Cite the moments you rely on as [mm:ss]. If the transcript does not contain the answer, say so plainly. Be concise. "
+    "If the question is not about the meetings, say you can only help with them."
+    + ai.GUARDRAILS
 )
 HISTORY_TURNS = 6
 TIME_REF = re.compile(r"\[(\d+):(\d{2})\]")
