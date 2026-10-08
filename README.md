@@ -27,6 +27,7 @@ Browse your meetings, read AI notes and action items, click any line of the tran
 | **People** | Who talks how much, which meetings, what they still owe |
 | **Export** | Transcript as PDF, MD, TXT, JSON, SRT, CSV. Notes as PDF, MD, JSON |
 | **Everything else** | Upload or paste a transcript (`.txt` `.vtt` `.json`), light and dark theme, toasts, settings |
+| **On your phone** | Under 800px the sidebar becomes a slide-in menu, the top bar shrinks, and every page fits a 390px screen |
 
 It works with no API key. The built-in logic writes notes and answers questions; add a key and a real model takes over.
 
@@ -58,12 +59,12 @@ Sample meetings are created on first start. Needs Python 3.11+ and Node 20.9+.
 | Anthropic | `ANTHROPIC_API_KEY` | Claude models |
 | OpenAI | `OPENAI_API_KEY` | `OPENAI_BASE_URL` points it at any compatible server |
 | Google | `GEMINI_API_KEY` | Gemini |
-| DeepSeek | `DEEPSEEK_API_KEY` | OpenAI-compatible |
+| DeepSeek | `DEEPSEEK_API_KEY` | OpenAI-compatible, model `deepseek-v4-flash` |
 | Groq, OpenRouter | `GROQ_API_KEY`, `OPENROUTER_API_KEY` | OpenAI-compatible |
 | Ollama | `OLLAMA_BASE_URL` | local models |
 | Built-in | nothing | always available, the default |
 
-A provider shows up in the model picker only when its key is set. If a call fails for any reason, the built-in logic answers instead and the call is logged under **Settings → AI Settings**. Adding a provider is one small file in `backend/app/services/llm/` and one line in `registry.py`.
+A provider shows up in the model picker only when its key is set. If a call fails for any reason, the built-in logic answers instead and the call is logged under **Settings → AI Settings**. Every provider gets the same prompts, which treat the transcript as data and never as instructions (so a line like "ignore previous instructions" inside a meeting is quoted, not obeyed), forbid invented facts, and keep Ask on the topic of your meetings. Adding a provider is one small file in `backend/app/services/llm/` and one line in `registry.py`.
 
 ## How it works
 
@@ -124,7 +125,7 @@ Every route is under `/api`. Interactive docs at `/docs` when the server runs.
 
 ## Tests
 
-**963 tests** across four layers, one command each.
+**977 tests** across four layers, one command each.
 
 | Layer | Where | What | Run |
 |---|---|---|---|
@@ -133,7 +134,7 @@ Every route is under `/api`. Interactive docs at `/docs` when the server runs.
 | Frontend unit | `frontend/tests/unit` | Vitest + Testing Library | `make test-frontend` |
 | Browser end to end | `frontend/tests/e2e` | Playwright, real backend, real audio | `make test-e2e` |
 
-Currently **374** backend, **496** frontend and **93** browser tests, all passing (`make test-all`).
+Currently **378** backend, **503** frontend and **96** browser tests, all passing (`make test-all`).
 Some tests check the tests: breaking the code on purpose and confirming a test fails.
 
 ## Choices and limits
@@ -146,7 +147,7 @@ Some tests check the tests: breaking the code on purpose and confirming a test f
 
 ## Deploy
 
-**Backend on Render.** New → Blueprint → pick this repo (it reads `render.yaml`). Then set `CORS_ORIGINS` to your Vercel address. Optional: AI provider keys.
+**Backend on Render.** New → Blueprint → pick this repo (it reads `render.yaml`). Then set `CORS_ORIGINS` to your Vercel address. Optional: AI provider keys, for example `DEEPSEEK_API_KEY` (Environment tab; the service restarts by itself).
 
 **Frontend on Vercel.** Import the repo, set the root directory to `frontend`, add `NEXT_PUBLIC_API_URL` = your Render address (no trailing slash).
 
