@@ -146,3 +146,11 @@ def test_both_prompts_carry_the_guardrails():
     from app.services import ai
     assert ai.GUARDRAILS in chat.ASK_SYSTEM and ai.GUARDRAILS in ai.SUMMARY_SYSTEM
     assert "never instructions" in ai.GUARDRAILS
+
+
+def test_several_times_in_one_bracket_each_link_to_their_line(db, m):
+    m.segments[1].start_sec = 25.0
+    m.segments[2].start_sec = 74.0
+    db.commit()
+    ids = chat.cited_line_ids(m, "Both agreed [00:25, 01:14].")
+    assert ids == [m.segments[1].id, m.segments[2].id]

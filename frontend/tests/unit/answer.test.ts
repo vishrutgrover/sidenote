@@ -38,4 +38,21 @@ describe("parseAnswer", () => {
   });
 
   it("handles empty text", () => expect(parseAnswer("")).toEqual([]));
+
+  it("keeps **bold** as bold text, also inside bullets", () => {
+    expect(parseAnswer("**Design Review** — three screens")[0].parts).toEqual([{ bold: "Design Review" }, " — three screens"]);
+    expect(parseAnswer("- **Maya** drafts the copy [01:13]")[0]).toEqual({ kind: "li", parts: [{ bold: "Maya" }, " drafts the copy ", { time: 73, label: "01:13" }] });
+  });
+
+  it("splits several times in one bracket into separate jumps", () => {
+    expect(parseAnswer("Agreed [00:25, 01:14].")[0].parts).toEqual(["Agreed ", { time: 25, label: "00:25" }, ", ", { time: 74, label: "01:14" }, "."]);
+  });
+
+  it("shows a heading as bold text and numbers as a list", () => {
+    expect(parseAnswer("## Summary\n1. first\n2) second")).toEqual([
+      { kind: "p", parts: [{ bold: "Summary" }] },
+      { kind: "li", parts: ["first"] },
+      { kind: "li", parts: ["second"] },
+    ]);
+  });
 });
