@@ -30,7 +30,7 @@ export default function PeoplePage() {
             <Link href={`/people/${p.id}`} className={`card ${styles.person}`}>
               <span className="avatar" style={{ background: avatarColor(p.id), width: 40, height: 40, fontSize: 14 }}>{initials(p.name)}</span>
               <span>
-                <strong>{p.name}</strong>{p.is_me && <span className="badge-green" style={{ marginLeft: 8 }}>You</span>}
+                <span className={styles.name}><strong>{p.name}</strong>{p.is_me && <span className="badge-green">You</span>}</span>
                 <span className="muted">{p.email}</span>
               </span>
               <span className={`muted ${styles.count}`}>{p.meeting_count} meeting{p.meeting_count === 1 ? "" : "s"}</span>
