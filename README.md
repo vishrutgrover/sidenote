@@ -68,6 +68,34 @@ Sample meetings are created on first start. Needs Python 3.11+ and Node 20.9+.
 
 A provider shows up in the model picker only when its key is set. If a call fails for any reason, the built-in logic answers instead and the call is logged under **Settings → AI Settings**. Every provider gets the same prompts, which treat the transcript as data and never as instructions (so a line like "ignore previous instructions" inside a meeting is quoted, not obeyed), forbid invented facts, and keep Ask on the topic of your meetings. Adding a provider is one small file in `backend/app/services/llm/` and one line in `registry.py`.
 
+## Transcript format
+
+Upload a file or paste text when you add a meeting. Three formats work:
+
+**Plain text** (`.txt` or pasted): one line per speaker turn.
+
+```
+[00:00:01] Ana: We should launch on Friday.
+[00:00:15] Ben: I'll write the announcement.
+```
+
+**WebVTT** (`.vtt`):
+
+```
+WEBVTT
+
+00:00:01.000 --> 00:00:04.000
+Ana: Hello from a subtitle file
+```
+
+**JSON** (`.json`): a list of lines.
+
+```json
+[{"speaker": "Ana", "start": 1, "text": "We should launch on Friday."}]
+```
+
+The timestamp and the speaker are both optional. A line with no time gets one estimated from the word count, and a line with no speaker is attributed to "Speaker 1". Without a title, the file name is used.
+
 ## How it works
 
 ```mermaid
