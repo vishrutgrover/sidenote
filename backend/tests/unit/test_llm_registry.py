@@ -95,6 +95,6 @@ def test_deepseek_is_an_openai_style_provider_with_its_own_address_and_models(mo
     monkeypatch.setenv("DEEPSEEK_API_KEY", "k")
     p = registry.all_providers()["deepseek"]
     assert p.enabled and p.base_url == "https://api.deepseek.com/v1"
-    assert p.models == ["deepseek-v4-flash", "deepseek-v4-pro"]  # the first one is the default
+    assert p.models == ["deepseek-v4-flash"]
     monkeypatch.setenv("DEEPSEEK_MODELS", "my-model")
     assert registry.all_providers()["deepseek"].models == ["my-model"]
