@@ -41,7 +41,7 @@ def cited_line_ids(meeting: Meeting, answer: str) -> list[int]:
     ids = []
     for m in TIME_REF.finditer(answer):
         t = int(m.group(1)) * 60 + int(m.group(2))
-        seg = max((s for s in meeting.segments if s.start_sec <= t + 0.5), key=lambda s: s.start_sec, default=None)
+        seg = max((s for s in meeting.segments if s.start_sec < t + 1), key=lambda s: s.start_sec, default=None)
         if seg and seg.id not in ids:
             ids.append(seg.id)
     return ids

@@ -58,6 +58,7 @@ Sample meetings are created on first start. Needs Python 3.11+ and Node 20.9+.
 | Anthropic | `ANTHROPIC_API_KEY` | Claude models |
 | OpenAI | `OPENAI_API_KEY` | `OPENAI_BASE_URL` points it at any compatible server |
 | Google | `GEMINI_API_KEY` | Gemini |
+| DeepSeek | `DEEPSEEK_API_KEY` | OpenAI-compatible |
 | Groq, OpenRouter | `GROQ_API_KEY`, `OPENROUTER_API_KEY` | OpenAI-compatible |
 | Ollama | `OLLAMA_BASE_URL` | local models |
 | Built-in | nothing | always available, the default |

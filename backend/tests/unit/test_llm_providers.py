@@ -94,3 +94,14 @@ def test_non_json_success_is_an_llm_error(monkeypatch):
     monkeypatch.setattr(httpx, "post", lambda *a, **k: httpx.Response(200, text="<html>"))
     with pytest.raises(LLMError):
         base.post_json("http://x", {}, {})
+
+
+def test_deepseek_request_goes_to_its_chat_endpoint_with_the_key_as_a_bearer_token(sent, monkeypatch):
+    from app.services.llm import registry
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "dk-test")
+    sent.reply = {"choices": [{"message": {"content": "ok"}}]}
+    assert registry.all_providers()["deepseek"].complete("sys", "usr", "deepseek-v4-flash") == "ok"
+    url, headers, body = sent.calls[0]
+    assert url == "https://api.deepseek.com/v1/chat/completions"
+    assert headers == {"Authorization": "Bearer dk-test"}
+    assert body["model"] == "deepseek-v4-flash"

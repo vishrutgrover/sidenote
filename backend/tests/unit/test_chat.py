@@ -50,6 +50,15 @@ def test_cited_times_map_to_the_line_that_was_playing(db, m):
     assert [s.text[:6] for s in m.segments if s.id in ids] == ["We wil", "The bu"]  # 00:02 falls inside line 1; no duplicates
 
 
+def test_a_citation_covers_the_whole_second_it_shows(db, m):
+    # lines are shown by their start time rounded down: a line starting at 98.9 s is displayed as 01:38
+    m.segments[1].start_sec = 98.9
+    m.segments[2].start_sec = 130.0
+    db.commit()
+    ids = chat.cited_line_ids(m, "He said it at [01:38].")
+    assert ids == [m.segments[1].id]
+
+
 def test_citations_that_match_no_line_are_ignored(db, m):
     assert chat.cited_line_ids(m, "nothing [99:99] or [bad] here") == [m.segments[-1].id]  # 99:99 is after the last line start
     assert chat.cited_line_ids(m, "no references at all") == []
