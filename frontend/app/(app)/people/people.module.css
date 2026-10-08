@@ -43,6 +43,11 @@
   flex: 1;
   flex-direction: column;
 }
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .count {
   white-space: nowrap;
 }
