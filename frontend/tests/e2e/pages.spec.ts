@@ -50,6 +50,18 @@ test.describe("Home", () => {
   });
 });
 
+test("the greeting follows the visitor's clock, not the server's", async ({ browser }) => {
+  // pick a time of day that differs from the server's own, so a server-rendered greeting would be wrong
+  const serverHour = new Date().getUTCHours(); // the server and this test run on the same machine, in UTC terms
+  const [hour, expected] = serverHour >= 5 && serverHour < 12 ? [20, "Good Evening"] : [9, "Good Morning"];
+  const context = await browser.newContext({ timezoneId: "UTC" });
+  const page = await context.newPage();
+  await page.clock.install({ time: new Date(Date.UTC(2026, 9, 7, hour, 30)) });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(`${expected}, Vishrut`);
+  await context.close();
+});
+
 test.describe("Tasks", () => {
   let before: { id: number; is_done: boolean }[] = [];
   test.beforeEach(async ({ request }) => {

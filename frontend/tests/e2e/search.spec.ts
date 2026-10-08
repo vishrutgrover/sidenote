@@ -2,11 +2,20 @@ import { expect, test, type Page } from "@playwright/test";
 
 const dialog = (page: Page) => page.getByRole("dialog", { name: "Search meetings" });
 const search = (page: Page) => page.getByLabel("Search", { exact: true });
+/** Open a page, wait until React is running on it (the data has loaded), then press the shortcut. A key
+ *  pressed before the page is ready would be lost, which a person cannot do but a test can. */
+async function openSearch(page: Page, path = "/meetings") {
+  await page.goto(path);
+  await page.waitForLoadState("networkidle");
+  await page.keyboard.press("ControlOrMeta+k");
+  await expect(dialog(page)).toBeVisible();
+}
 const rows = (page: Page) => dialog(page).getByRole("listbox").getByRole("option");
 
 test("Cmd/Ctrl+K opens the search from any page and Escape closes it", async ({ page }) => {
   await page.goto("/meetings");
   await expect(dialog(page)).toHaveCount(0);
+  await page.waitForLoadState("networkidle");
   await page.keyboard.press("ControlOrMeta+k");
   await expect(dialog(page)).toBeVisible();
   await expect(search(page)).toBeFocused();
@@ -21,13 +30,13 @@ test("Cmd/Ctrl+K opens the search from any page and Escape closes it", async ({ 
 test("it also works on a meeting page, where the shell is not shown", async ({ page }) => {
   await page.goto("/meetings");
   await page.locator('a[href^="/view/"]').first().click();
+  await page.waitForLoadState("networkidle");
   await page.keyboard.press("ControlOrMeta+k");
   await expect(dialog(page)).toBeVisible();
 });
 
 test("finds a meeting by something said in it, shows the matching line and opens at that moment", async ({ page }) => {
-  await page.goto("/meetings");
-  await page.keyboard.press("ControlOrMeta+k");
+  await openSearch(page);
   await search(page).fill("dispatchers");
   const result = dialog(page).getByText("Customer Call: Acme Logistics");
   await expect(result).toBeVisible();
@@ -42,8 +51,7 @@ test("finds a meeting by something said in it, shows the matching line and opens
 });
 
 test("finds by a participant's name, and Enter opens the first result", async ({ page }) => {
-  await page.goto("/meetings");
-  await page.keyboard.press("ControlOrMeta+k");
+  await openSearch(page);
   await search(page).fill("Okafor");
   await expect(rows(page).first()).toBeVisible();
   await search(page).press("Enter");
@@ -51,8 +59,7 @@ test("finds by a participant's name, and Enter opens the first result", async ({
 });
 
 test("Title only ignores what was said, and sort reverses the order", async ({ page }) => {
-  await page.goto("/meetings");
-  await page.keyboard.press("ControlOrMeta+k");
+  await openSearch(page);
   await search(page).fill("the");
   await expect(rows(page).first()).toBeVisible();
   const newest = await dialog(page).locator("strong").allTextContents();
@@ -66,8 +73,7 @@ test("Title only ignores what was said, and sort reverses the order", async ({ p
 });
 
 test("no results, special characters and a clear button", async ({ page }) => {
-  await page.goto("/meetings");
-  await page.keyboard.press("ControlOrMeta+k");
+  await openSearch(page);
   await search(page).fill("zeppelin");
   await expect(dialog(page).getByText(/No results for/)).toBeVisible();
   await search(page).fill('"; DROP TABLE meetings; -- * ( AND');
@@ -78,8 +84,7 @@ test("no results, special characters and a clear button", async ({ page }) => {
 });
 
 test("the Ask Sidenote shortcut goes to the chat page", async ({ page }) => {
-  await page.goto("/meetings");
-  await page.keyboard.press("ControlOrMeta+k");
+  await openSearch(page);
   await dialog(page).getByRole("link", { name: /Ask Sidenote anything/ }).click();
   await expect(page).toHaveURL(/\/ask$/);
   await expect(dialog(page)).toHaveCount(0);

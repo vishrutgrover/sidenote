@@ -6,7 +6,7 @@ import { AskPanel } from "@/components/AskPanel";
 import { NewMeetingModal } from "@/components/NewMeetingModal";
 import { useToast } from "@/components/Toast";
 import { dayLabel, greeting, initials, timeLabel } from "@/lib/format";
-import { useFetch } from "@/lib/hooks";
+import { useBrowserValue, useFetch } from "@/lib/hooks";
 import type { ActionItem, Me, Meeting } from "@/lib/types";
 import styles from "./home.module.css";
 
@@ -22,13 +22,13 @@ export default function Home() {
 
   const latest = meetings.find((m) => m.overview);
   const first = me?.name.split(" ")[0] ?? "";
+  const hello = useBrowserValue(greeting, "Hello"); // the server cannot know the visitor's time of day
 
   return (
     <div className={styles.page}>
       <div className={styles.main}>
         <header className={styles.hero}>
-          {/* the greeting depends on the visitor's clock, so the server's guess may differ */}
-          <h2 suppressHydrationWarning>{greeting()}{first && `, ${first}`}</h2>
+          <h2>{hello}{first && `, ${first}`}</h2>
         </header>
 
         <section aria-label="Personal assistant">

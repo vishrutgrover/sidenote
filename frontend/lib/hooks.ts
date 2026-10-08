@@ -109,3 +109,14 @@ export function useDismiss(ref: RefObject<HTMLElement | null>, onClose: () => vo
     };
   }, [ref, active]);
 }
+
+
+const never = () => () => {};
+
+/**
+ * A value that only the browser can know (its clock, its timezone). The server renders `fallback`; once the
+ * page is running in the browser it switches to `read()`. Without this the server's answer would stay on screen.
+ */
+export function useBrowserValue<T>(read: () => T, fallback: T): T {
+  return useSyncExternalStore(never, read, () => fallback);
+}
