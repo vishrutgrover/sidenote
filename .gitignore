@@ -6,9 +6,9 @@ __pycache__/
 .env
 *.db
 .DS_Store
-refimgs/
 test-results/
 playwright-report/
 
-# private study notes (kept on disk, never committed)
-study/
+# everything personal that stays on my disk and is never committed:
+# reference screenshots, study notes, demo video work files
+ext/
