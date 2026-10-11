@@ -9,6 +9,4 @@ __pycache__/
 test-results/
 playwright-report/
 
-# everything personal that stays on my disk and is never committed:
-# reference screenshots, study notes, demo video work files
 ext/
