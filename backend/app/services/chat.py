@@ -5,7 +5,7 @@ import re
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import ActionItem, ChatMessage, Meeting, MeetingParticipant, User
+from ..models import ActionItem, ChatMessage, Meeting, MeetingParticipant, Segment, User
 from . import ai
 from .llm import registry
 from .search import top_segments
@@ -46,6 +46,24 @@ def meetings_header(db: Session, limit: int = 20) -> str:
     return "\n".join(f"- {m.title} ({m.started_at:%Y-%m-%d}): {(m.summary.overview if m.summary else 'no notes yet')[:300]}" for m in rows)
 
 
+def task_time(a: ActionItem) -> str:
+    """', at 01:09' for a task taken from a transcript line. Tasks added by hand have no time."""
+    return f", at {ai.clock(a.timestamp_sec)}" if a.timestamp_sec is not None else ""
+
+
+def task_sources(db: Session, tasks: list[ActionItem]) -> list[int]:
+    """The transcript line each task came from (the last one that had started at its time), so the answer can link to it."""
+    ids = []
+    for a in tasks:
+        if a.timestamp_sec is None:
+            continue
+        seg = db.scalar(select(Segment).where(Segment.meeting_id == a.meeting_id, Segment.start_sec <= a.timestamp_sec + 1)
+                        .order_by(Segment.start_sec.desc()).limit(1))
+        if seg and seg.id not in ids:
+            ids.append(seg.id)
+    return ids
+
+
 def my_tasks(db: Session, user: User | None) -> list[ActionItem]:
     """Open tasks whose assignee is the person the logged-in user is."""
     if not user or user.person_id is None:
@@ -79,7 +97,7 @@ def builtin_answer(db: Session, meeting: Meeting | None, question: str, user: Us
             return "There are no action items.", []
         return "\n".join(
             f"- [{'x' if a.is_done else ' '}] {a.text}" + (f" ({a.assignee.person.name})" if a.assignee else "")
-            + ("" if meeting else f" - {a.meeting.title}") for a in items), []
+            + ("" if meeting else f" - {a.meeting.title}") + (f" [{ai.clock(a.timestamp_sec)}]" if a.timestamp_sec is not None else "") for a in items), ([] if meeting else task_sources(db, items))
     hits = top_segments(db, question, meeting.id if meeting else None, limit=5)
     if not hits:
         return f"I couldn't find anything about that in {'this meeting' if meeting else 'your meetings'}. Try other keywords.", []
@@ -103,12 +121,14 @@ def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str 
         chat = "".join(f"{m.role}: {m.content}\n" for m in prior)
         who = f"The person asking is {user.name}; \"I\", \"me\" and \"my\" mean {user.name}.\n" if user else ""
         tasks = my_tasks(db, user)
-        mine = f"Open tasks for {user.name}:\n" + "\n".join(f"- {a.text} ({a.meeting.title})" for a in tasks) + "\n\n" if tasks else ""
+        mine = f"Open tasks for {user.name}:\n" + "\n".join(f"- {a.text} ({a.meeting.title}{task_time(a)})" for a in tasks) + "\n\n" if tasks else ""
         prompt = who + mine + f"Transcript:\n{context}\n\n" + (f"Conversation so far:\n{chat}\n" if chat else "") + f"Question: {question}"
         reply = provider.complete(ASK_SYSTEM, prompt, model).strip()
         if not reply:
             raise ValueError("empty reply")
-        return reply, cited_line_ids(meeting, reply) if meeting else [s.id for s in hits[:5]]
+        if meeting:
+            return reply, cited_line_ids(meeting, reply)
+        return reply, (task_sources(db, tasks) if tasks and TASKS_Q.search(question) else []) or [s.id for s in hits[:5]]
 
     (answer, source_ids), info = ai.call(
         db, meeting.id if meeting else None, "ask", provider, model,

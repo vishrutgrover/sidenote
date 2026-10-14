@@ -176,7 +176,7 @@ def test_the_model_is_told_who_is_asking_and_which_tasks_are_theirs(db, m, monke
     from app.models import ActionItem
     ana = next(p for p in m.participants if p.person.name == "Ana")
     ben = next(p for p in m.participants if p.person.name == "Ben")
-    db.add_all([ActionItem(meeting_id=m.id, assignee_id=ana.id, text="Write the announcement"),
+    db.add_all([ActionItem(meeting_id=m.id, assignee_id=ana.id, text="Write the announcement", timestamp_sec=65),
                 ActionItem(meeting_id=m.id, assignee_id=ben.id, text="Fix the budget")])
     db.flush()
     me = User(name="Ana", email="ana@example.com", person_id=ana.person_id)
@@ -185,5 +185,7 @@ def test_the_model_is_told_who_is_asking_and_which_tasks_are_theirs(db, m, monke
     monkeypatch.setattr(base, "post_json", lambda url, headers, body, timeout=60.0: seen.append(body) or {"content": [{"text": "ok"}]})
     chat.ask(db, None, "What is my todo?", None, None, me)
     prompt = seen[0]["messages"][0]["content"]
-    assert "The person asking is Ana" in prompt and "- Write the announcement" in prompt and "Fix the budget" not in prompt
-    assert "Write the announcement" in chat.ask(db, None, "What is my todo?", "mock", None, me)[1].content
+    assert "The person asking is Ana" in prompt and "- Write the announcement (Launch, at 01:05)" in prompt and "Fix the budget" not in prompt
+    bot = chat.ask(db, None, "What is my todo?", "mock", None, me)[1]
+    assert "Write the announcement" in bot.content
+    assert json.loads(bot.sources) == [m.segments[2].id]  # the line at 01:05, so the page can link to it
