@@ -48,6 +48,21 @@ def test_add_and_delete_a_point(client):
     assert len(client.get(f"/api/meetings/{m['id']}/summary").json()["sections"][0]["bullets"]) == len(section["bullets"])
 
 
+def test_add_rename_and_delete_a_section(client):
+    m = meeting(client)
+    url = f"/api/meetings/{m['id']}/summary"
+    before = len(client.get(url).json()["sections"])
+    r = client.post(f"/api/meetings/{m['id']}/note-sections", json={"title": "  Risks  "})
+    assert r.status_code == 201 and r.json()["title"] == "Risks" and r.json()["bullets"] == []
+    assert client.get(url).json()["sections"][-1]["title"] == "Risks"
+    assert client.patch(f"/api/note-sections/{r.json()['id']}", json={"title": "Open risks"}).json()["title"] == "Open risks"
+    first = client.get(url).json()["sections"][0]
+    assert client.delete(f"/api/note-sections/{first['id']}").status_code == 204
+    left = client.get(url).json()["sections"]
+    assert len(left) == before and first["id"] not in [s["id"] for s in left]
+    assert client.patch(f"/api/note-bullets/{first['bullets'][0]['id']}", json={"text": "x"}).status_code == 404  # its points went too
+
+
 def test_overview_can_be_written_for_a_meeting_that_had_none(client):
     from app.db import SessionLocal
     from app.models import Summary
@@ -73,6 +88,10 @@ def test_invalid_note_edits_are_rejected(client, url, body):
 def test_missing_bullet_and_meeting_are_404(client):
     assert client.patch("/api/note-bullets/99999", json={"text": "x"}).status_code == 404
     assert client.delete("/api/note-bullets/99999").status_code == 404
+    assert client.delete("/api/note-sections/99999").status_code == 404
+    assert client.patch("/api/note-sections/99999", json={"title": "x"}).status_code == 404
+    assert client.post("/api/meetings/999/note-sections", json={"title": "x"}).status_code == 404
+    assert client.post("/api/meetings/1/note-sections", json={"title": " "}).status_code == 422
     assert client.post("/api/note-sections/99999/bullets", json={"text": "x"}).status_code == 404
     assert client.get("/api/meetings/999/summary").status_code == 404
     assert client.get("/api/meetings/999/insights").status_code == 404

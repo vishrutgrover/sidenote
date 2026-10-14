@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from ..db import get_db
 from ..deps import get_meeting
 from ..models import Meeting, NoteBullet, NoteSection, Summary
-from ..schemas import AiChoice, BulletOut, BulletUpdate, RegenerateOut, SummaryOut, SummaryUpdate
+from ..schemas import AiChoice, BulletOut, BulletUpdate, RegenerateOut, SectionIn, SectionOut, SummaryOut, SummaryUpdate
 from ..services import ai, insights
 from ..services.llm.registry import ProviderUnavailable
 
@@ -57,12 +57,39 @@ def edit_bullet(bullet_id: int, body: BulletUpdate, db: Session = Depends(get_db
     return bullet
 
 
-@router.post("/note-sections/{section_id}/bullets", response_model=BulletOut, status_code=201)
-def add_bullet(section_id: int, body: BulletUpdate, db: Session = Depends(get_db)):
-    """A new point at the end of a section. It has no timestamp: it was written by hand, not taken from a line."""
+@router.post("/meetings/{meeting_id}/note-sections", response_model=SectionOut, status_code=201)
+def add_section(body: SectionIn, meeting: Meeting = Depends(get_meeting), db: Session = Depends(get_db)):
+    section = NoteSection(meeting_id=meeting.id, title=body.title, position=max((s.position for s in meeting.sections), default=-1) + 1)
+    db.add(section)
+    db.commit()
+    return section
+
+
+def get_section(section_id: int, db: Session = Depends(get_db)) -> NoteSection:
     section = db.get(NoteSection, section_id)
     if not section:
         raise HTTPException(404, "Section not found")
+    return section
+
+
+@router.patch("/note-sections/{section_id}", response_model=SectionOut)
+def rename_section(body: SectionIn, section: NoteSection = Depends(get_section), db: Session = Depends(get_db)):
+    section.title = body.title
+    db.commit()
+    return section
+
+
+@router.delete("/note-sections/{section_id}", status_code=204)
+def delete_section(section: NoteSection = Depends(get_section), db: Session = Depends(get_db)):
+    """Its points go with it (cascade)."""
+    db.delete(section)
+    db.commit()
+    return Response(status_code=204)
+
+
+@router.post("/note-sections/{section_id}/bullets", response_model=BulletOut, status_code=201)
+def add_bullet(body: BulletUpdate, section: NoteSection = Depends(get_section), db: Session = Depends(get_db)):
+    """A new point at the end of a section. It has no timestamp: it was written by hand, not taken from a line."""
     bullet = NoteBullet(section_id=section.id, text=body.text, position=max((b.position for b in section.bullets), default=-1) + 1)
     db.add(bullet)
     db.commit()

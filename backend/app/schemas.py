@@ -111,6 +111,10 @@ class SummaryUpdate(BaseModel):
     overview: Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)]
 
 
+class SectionIn(BaseModel):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
+
+
 class BulletUpdate(BaseModel):
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
 

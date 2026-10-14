@@ -269,6 +269,21 @@ describe("NotesPanel", () => {
       expect(writes).toEqual([["DELETE", "/api/note-bullets/12", undefined], ["POST", "/api/note-sections/1/bullets", { text: "Review on Monday" }]]);
     });
 
+    it("renames, deletes and adds sections", async () => {
+      const { calls } = setup({ "/api/meetings/1/summary": () => summary, "/api/note-sections/": null, "/api/meetings/1/note-sections": { id: 9, title: "Risks", bullets: [] } });
+      await loaded();
+      fireEvent.click(screen.getByRole("button", { name: /Edit/ }));
+      fireEvent.change(screen.getByLabelText("Section: Launch plan"), { target: { value: "Launch" } });
+      fireEvent.click(screen.getByRole("button", { name: "Delete section: Next steps" }));
+      expect(screen.queryByLabelText("Note: Write the announcement")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /Add section/ }));
+      fireEvent.change(screen.getByLabelText("New section title"), { target: { value: "Risks" } });
+      fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+      expect(await screen.findByText("Notes saved")).toBeInTheDocument();
+      const writes = calls.requests!.filter((r) => r.method !== "GET").map((w) => [w.method, w.path, w.body]);
+      expect(writes).toEqual([["PATCH", "/api/note-sections/1", { title: "Launch" }], ["DELETE", "/api/note-sections/2", undefined], ["POST", "/api/meetings/1/note-sections", { title: "Risks" }]]);
+    });
+
     it("saving without changes sends nothing", async () => {
       const { calls } = setup();
       await loaded();

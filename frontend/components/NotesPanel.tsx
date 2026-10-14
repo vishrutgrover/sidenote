@@ -10,7 +10,7 @@ import { ActionItems } from "./ActionItems";
 import { useToast } from "./Toast";
 import styles from "./NotesPanel.module.css";
 
-type Draft = { overview: string; bullets: Record<number, string>; removed: number[]; added: Record<number, string[]> }; // added: new points per section id
+type Draft = { overview: string; bullets: Record<number, string>; removed: number[]; added: Record<number, string[]>; titles: Record<number, string>; removedSections: number[]; newSections: string[] }; // added: new points per section id
 
 /** Summary, sectioned notes with clickable moments, and action items. Notes can be edited or rewritten. */
 export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting: Meeting; items: ActionItem[]; onItemsChanged: () => void; onSeek: (sec: number) => void }) {
@@ -23,7 +23,7 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
   if (error && !summary) return <p className="empty">{error}</p>;
   if (!summary) return <div className="skeleton" style={{ height: 240 }} />;
 
-  const startEdit = () => setDraft({ overview: summary.overview, bullets: Object.fromEntries(summary.sections.flatMap((s) => s.bullets.map((b) => [b.id, b.text]))), removed: [], added: {} });
+  const startEdit = () => setDraft({ overview: summary.overview, bullets: Object.fromEntries(summary.sections.flatMap((s) => s.bullets.map((b) => [b.id, b.text]))), removed: [], added: {}, titles: Object.fromEntries(summary.sections.map((s) => [s.id, s.title])), removedSections: [], newSections: [] });
 
   const setAdded = (sectionId: number, change: (list: string[]) => string[]) =>
     setDraft((d) => d && { ...d, added: { ...d.added, [sectionId]: change(d.added[sectionId] ?? []) } });
@@ -33,7 +33,11 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
     setBusy(true);
     try {
       if (draft.overview.trim() !== summary.overview) await api(`/api/meetings/${meeting.id}/summary`, send("PATCH", { overview: draft.overview }));
-      for (const b of summary.sections.flatMap((s) => s.bullets)) {
+      for (const s of summary.sections) {
+        if (draft.removedSections.includes(s.id)) await api(`/api/note-sections/${s.id}`, send("DELETE"));
+        else if (draft.titles[s.id]?.trim() && draft.titles[s.id].trim() !== s.title) await api(`/api/note-sections/${s.id}`, send("PATCH", { title: draft.titles[s.id] }));
+      }
+      for (const b of summary.sections.filter((s) => !draft.removedSections.includes(s.id)).flatMap((s) => s.bullets)) {
         if (draft.removed.includes(b.id)) {
           await api(`/api/note-bullets/${b.id}`, send("DELETE"));
           continue;
@@ -41,7 +45,8 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
         const text = draft.bullets[b.id]?.trim();
         if (text && text !== b.text) await api(`/api/note-bullets/${b.id}`, send("PATCH", { text }));
       }
-      for (const [sectionId, texts] of Object.entries(draft.added)) {
+      for (const title of draft.newSections.map((t) => t.trim()).filter(Boolean)) await api(`/api/meetings/${meeting.id}/note-sections`, send("POST", { title }));
+      for (const [sectionId, texts] of Object.entries(draft.added).filter(([id]) => !draft.removedSections.includes(Number(id)))) {
         for (const text of texts.map((t) => t.trim()).filter(Boolean)) await api(`/api/note-sections/${sectionId}/bullets`, send("POST", { text }));
       }
       setDraft(null);
@@ -107,10 +112,17 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
         <div className={styles.keywords}>{summary.keywords.map((k) => <span key={k} className="chip">{k}</span>)}</div>
       )}
 
-      {summary.sections.length > 0 && <h2 className={styles.heading}>Notes</h2>}
-      {summary.sections.map((s) => (
+      {(summary.sections.length > 0 || draft) && <h2 className={styles.heading}>Notes</h2>}
+      {summary.sections.filter((s) => !draft?.removedSections.includes(s.id)).map((s) => (
         <section key={s.id} className={styles.section}>
-          <h3>{s.title}</h3>
+          {draft ? (
+            <span className={styles.edit}>
+              <input className="input" value={draft.titles[s.id] ?? ""} onChange={(e) => setDraft({ ...draft, titles: { ...draft.titles, [s.id]: e.target.value } })} aria-label={`Section: ${s.title}`} />
+              <button className="btn btn-ghost btn-icon" onClick={() => setDraft({ ...draft, removedSections: [...draft.removedSections, s.id] })} aria-label={`Delete section: ${s.title}`} title="Delete this section and its points"><Trash2 size={14} /></button>
+            </span>
+          ) : (
+            <h3>{s.title}</h3>
+          )}
           <ul>
             {s.bullets.filter((b) => !draft?.removed.includes(b.id)).map((b) => (
               <li key={b.id}>
@@ -141,6 +153,18 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
           {draft && <button className="btn btn-ghost" onClick={() => setAdded(s.id, (list) => [...list, ""])}><Plus size={14} /> Add point</button>}
         </section>
       ))}
+
+      {draft && (
+        <div className={styles.section}>
+          {draft.newSections.map((title, i) => (
+            <span key={i} className={styles.edit}>
+              <input className="input" autoFocus value={title} placeholder="New section title" onChange={(e) => setDraft({ ...draft, newSections: draft.newSections.map((t, k) => (k === i ? e.target.value : t)) })} aria-label="New section title" />
+              <button className="btn btn-ghost btn-icon" onClick={() => setDraft({ ...draft, newSections: draft.newSections.filter((_, k) => k !== i) })} aria-label="Remove new section" title="Remove"><X size={14} /></button>
+            </span>
+          ))}
+          <button className="btn btn-ghost" onClick={() => setDraft({ ...draft, newSections: [...draft.newSections, ""] })}><Plus size={14} /> Add section</button>
+        </div>
+      )}
 
       <ActionItems meetingId={meeting.id} items={items} participants={meeting.participants} onSeek={onSeek} onChange={onItemsChanged} />
 
