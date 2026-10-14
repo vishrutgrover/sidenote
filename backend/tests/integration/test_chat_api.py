@@ -145,3 +145,14 @@ def test_sources_of_a_deleted_meeting_are_dropped_not_crashed_on(client):
     client.delete(f"/api/meetings/{m['id']}")
     hist = client.get("/api/chat").json()
     assert all(s["meeting_id"] != m["id"] for h in hist for s in h["sources"])
+
+
+def test_global_prompt_counts_my_meetings_and_names_who_was_in_each(client, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-secret")
+    seen = []
+    monkeypatch.setattr(base, "post_json", lambda url, headers, body, timeout=60.0: seen.append(body["messages"][0]["content"]) or {"content": [{"text": "ok"}]})
+    total = len(client.get("/api/meetings").json())
+    attended = len(client.get("/api/meetings", params={"participant": client.get("/api/me").json()["person_id"]}).json())
+    client.post("/api/ask", json={"question": "how many meetings have I attended", "provider": "anthropic", "model": "claude-opus-5-5"})
+    assert f"Vishrut Grover attended {attended} of {total} meetings." in seen[0]
+    assert ", with Vishrut Grover" in seen[0] or "with Maya Chen" in seen[0]

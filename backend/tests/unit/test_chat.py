@@ -189,3 +189,18 @@ def test_the_model_is_told_who_is_asking_and_which_tasks_are_theirs(db, m, monke
     bot = chat.ask(db, None, "What is my todo?", "mock", None, me)[1]
     assert "Write the announcement" in bot.content
     assert json.loads(bot.sources) == [m.segments[2].id]  # the line at 01:05, so the page can link to it
+
+
+def test_all_meetings_prompt_lists_who_was_in_each_meeting_and_counts_attendance(db, m, monkeypatch):
+    ana = next(p for p in m.participants if p.person.name == "Ana")
+    me = User(name="Ana", email="ana@example.com", person_id=ana.person_id)
+    db.add(me)
+    db.flush()
+    create_from_lines(db, me, "Other", parse("Ben: hello there"), "paste")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    seen = []
+    monkeypatch.setattr(base, "post_json", lambda url, headers, body, timeout=60.0: seen.append(body) or {"content": [{"text": "ok"}]})
+    chat.ask(db, None, "how many meetings have I attended", None, None, me)
+    prompt = seen[0]["messages"][0]["content"]
+    assert "Ana attended 1 of 2 meetings." in prompt
+    assert "- Launch" in prompt and "with Ana, Ben:" in prompt

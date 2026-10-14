@@ -2,7 +2,7 @@
 import json
 import re
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..models import ActionItem, ChatMessage, Meeting, MeetingParticipant, Segment, User
@@ -43,7 +43,15 @@ def seg_line(db: Session, seg, show_meeting: bool) -> str:
 def meetings_header(db: Session, limit: int = 20) -> str:
     """One line per meeting, newest first, so the model can answer 'my last meeting' and 'what was each about'."""
     rows = db.scalars(select(Meeting).order_by(Meeting.started_at.desc()).limit(limit)).all()
-    return "\n".join(f"- {m.title} ({m.started_at:%Y-%m-%d}): {(m.summary.overview if m.summary else 'no notes yet')[:300]}" for m in rows)
+    return "\n".join(f"- {m.title} ({m.started_at:%Y-%m-%d}), with {', '.join(p.person.name for p in m.participants)}: "
+                      f"{(m.summary.overview if m.summary else 'no notes yet')[:300]}" for m in rows)
+
+
+def attendance(db: Session, user: User) -> str:
+    """'Vishrut attended 5 of 7 meetings.' Counted here, because the model only sees some of the meetings."""
+    total = db.scalar(select(func.count(Meeting.id)))
+    went = db.scalar(select(func.count(MeetingParticipant.id)).where(MeetingParticipant.person_id == user.person_id)) if user.person_id else 0
+    return f"{user.name} attended {went} of {total} meetings.\n"
 
 
 def task_time(a: ActionItem) -> str:
@@ -120,6 +128,8 @@ def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str 
             context = f"Meetings, newest first:\n{meetings_header(db)}\n\nRelevant lines:\n" + "\n".join(seg_line(db, s, True) for s in hits)
         chat = "".join(f"{m.role}: {m.content}\n" for m in prior)
         who = f"The person asking is {user.name}; \"I\", \"me\" and \"my\" mean {user.name}.\n" if user else ""
+        if user and not meeting:
+            who += attendance(db, user)
         tasks = my_tasks(db, user)
         mine = f"Open tasks for {user.name}:\n" + "\n".join(f"- {a.text} ({a.meeting.title}{task_time(a)})" for a in tasks) + "\n\n" if tasks else ""
         prompt = who + mine + f"Transcript:\n{context}\n\n" + (f"Conversation so far:\n{chat}\n" if chat else "") + f"Question: {question}"
