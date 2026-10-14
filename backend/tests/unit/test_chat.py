@@ -154,3 +154,19 @@ def test_several_times_in_one_bracket_each_link_to_their_line(db, m):
     db.commit()
     ids = chat.cited_line_ids(m, "Both agreed [00:25, 01:14].")
     assert ids == [m.segments[1].id, m.segments[2].id]
+
+
+def test_the_all_meetings_prompt_lists_meetings_newest_first_with_dates(db, m, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    older = create_from_lines(db, db.get(User, m.created_by), "Older sync", parse(TEXT), "paste")
+    older.started_at = m.started_at.replace(year=m.started_at.year - 1)
+    db.commit()
+    seen = []
+    monkeypatch.setattr(base, "post_json", lambda url, headers, body, timeout=60.0: seen.append(body) or {"content": [{"text": "ok"}]})
+    chat.ask(db, None, "Summarize my last meeting", None, None)
+    prompt = seen[0]["messages"][0]["content"]
+    assert f"- Launch ({m.started_at:%Y-%m-%d})" in prompt
+    assert prompt.index("- Launch (") < prompt.index("- Older sync (")
+    assert "newest or oldest" in seen[0]["system"]
+    chat.ask(db, m, "When is the launch?", None, None)
+    assert "Meetings, newest first" not in seen[1]["messages"][0]["content"]

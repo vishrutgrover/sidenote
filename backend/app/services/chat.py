@@ -13,7 +13,8 @@ from .search import top_segments
 ASK_SYSTEM = (
     "You answer questions about meetings using only the transcript provided. "
     "Cite the moments you rely on as [mm:ss], one bracket per moment. Write plain sentences and short '- ' bullets, no headings. If the transcript does not contain the answer, say so plainly. Be concise. "
-    "If the question is not about the meetings, say you can only help with them."
+    "If the question is not about the meetings, say you can only help with them. "
+    "When a list of meetings comes first, use its dates to tell which is newest or oldest."
     + ai.GUARDRAILS
 )
 HISTORY_TURNS = 6
@@ -37,6 +38,12 @@ def seg_line(db: Session, seg, show_meeting: bool) -> str:
     who = seg.speaker.person.name if seg.speaker else "Unknown"
     title = f"{db.get(Meeting, seg.meeting_id).title} @ " if show_meeting else ""
     return f"[{title}{ai.clock(seg.start_sec)}] {who}: {seg.text}"
+
+
+def meetings_header(db: Session, limit: int = 20) -> str:
+    """One line per meeting, newest first, so the model can answer 'my last meeting' and 'what was each about'."""
+    rows = db.scalars(select(Meeting).order_by(Meeting.started_at.desc()).limit(limit)).all()
+    return "\n".join(f"- {m.title} ({m.started_at:%Y-%m-%d}): {(m.summary.overview if m.summary else 'no notes yet')[:300]}" for m in rows)
 
 
 def cited_line_ids(meeting: Meeting, answer: str) -> list[int]:
@@ -83,7 +90,7 @@ def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str 
             hits = None
         else:  # all meetings will not fit in one prompt, so send the lines most relevant to the question
             hits = top_segments(db, question, None, limit=20)
-            context = "\n".join(seg_line(db, s, True) for s in hits)
+            context = f"Meetings, newest first:\n{meetings_header(db)}\n\nRelevant lines:\n" + "\n".join(seg_line(db, s, True) for s in hits)
         chat = "".join(f"{m.role}: {m.content}\n" for m in prior)
         prompt = f"Transcript:\n{context}\n\n" + (f"Conversation so far:\n{chat}\n" if chat else "") + f"Question: {question}"
         reply = provider.complete(ASK_SYSTEM, prompt, model).strip()

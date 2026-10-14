@@ -24,7 +24,7 @@ Browse your meetings, read AI notes and action items, click any line of the tran
 | **AI notes** | Summary, sectioned notes with clickable moments, action items grouped by person, sentiment, talk time. Edit, copy or regenerate |
 | **Tasks** | Add, edit, assign and tick off action items, per meeting or across all meetings |
 | **Collaborate** | Comments on a line, soundbites (clips that stop by themselves), bookmarks, tags |
-| **Ask Sidenote** | Chat about one meeting or all of them. Answers cite moments you can click. Pick any configured AI provider and model |
+| **Ask Sidenote** | Chat about one meeting or all of them. Answers cite moments you can click. Asking across all meetings also sends each meeting's title, date and overview, so "my last meeting" works. Pick any configured AI provider and model |
 | **Search anywhere** | `Cmd+K` finds titles, people and every word ever said, and opens the meeting at that moment |
 | **People** | Who talks how much, which meetings, what they still owe |
 | **Export** | Transcript as PDF, MD, TXT, JSON, SRT, CSV. Notes as PDF, MD, JSON |
@@ -155,7 +155,7 @@ Every route is under `/api`. Interactive docs at `/docs` when the server runs.
 
 ## Tests
 
-**977 tests** across four layers, one command each.
+**982 tests** across four layers, one command each.
 
 | Layer | Where | What | Run |
 |---|---|---|---|
@@ -164,7 +164,7 @@ Every route is under `/api`. Interactive docs at `/docs` when the server runs.
 | Frontend unit | `frontend/tests/unit` | Vitest + Testing Library | `make test-frontend` |
 | Browser end to end | `frontend/tests/e2e` | Playwright, real backend, real audio | `make test-e2e` |
 
-Currently **378** backend, **503** frontend and **96** browser tests, all passing (`make test-all`).
+Currently **380** backend, **506** frontend and **96** browser tests, all passing (`make test-all`).
 Some tests check the tests: breaking the code on purpose and confirming a test fails.
 
 ## Choices and limits
