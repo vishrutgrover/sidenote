@@ -170,3 +170,20 @@ def test_the_all_meetings_prompt_lists_meetings_newest_first_with_dates(db, m, m
     assert "newest or oldest" in seen[0]["system"]
     chat.ask(db, m, "When is the launch?", None, None)
     assert "Meetings, newest first" not in seen[1]["messages"][0]["content"]
+
+
+def test_the_model_is_told_who_is_asking_and_which_tasks_are_theirs(db, m, monkeypatch):
+    from app.models import ActionItem
+    ana = next(p for p in m.participants if p.person.name == "Ana")
+    ben = next(p for p in m.participants if p.person.name == "Ben")
+    db.add_all([ActionItem(meeting_id=m.id, assignee_id=ana.id, text="Write the announcement"),
+                ActionItem(meeting_id=m.id, assignee_id=ben.id, text="Fix the budget")])
+    db.flush()
+    me = User(name="Ana", email="ana@example.com", person_id=ana.person_id)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "k")
+    seen = []
+    monkeypatch.setattr(base, "post_json", lambda url, headers, body, timeout=60.0: seen.append(body) or {"content": [{"text": "ok"}]})
+    chat.ask(db, None, "What is my todo?", None, None, me)
+    prompt = seen[0]["messages"][0]["content"]
+    assert "The person asking is Ana" in prompt and "- Write the announcement" in prompt and "Fix the budget" not in prompt
+    assert "Write the announcement" in chat.ask(db, None, "What is my todo?", "mock", None, me)[1].content

@@ -128,9 +128,10 @@ def test_global_chat_is_separate_from_meeting_chats(client):
     assert client.get("/api/chat").json() == [] and len(client.get(f"/api/meetings/{m['id']}/chat").json()) == 2
 
 
-def test_global_task_question_lists_open_tasks_with_their_meeting(client):
+def test_global_task_question_lists_my_open_tasks_with_their_meeting(client):
     text = client.post("/api/ask", json={"question": "show my tasks"}).json()["assistant"]["content"]
-    assert "Weekly Product Sync" in text and "[x]" not in text  # only open tasks
+    assert "Interview: Backend Engineer" in text and "[x]" not in text  # only open tasks
+    assert all("(Vishrut Grover)" in line for line in text.splitlines())  # only mine
 
 
 def test_global_question_with_no_match_says_so(client):

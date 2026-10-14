@@ -5,7 +5,7 @@ import re
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..models import ActionItem, ChatMessage, Meeting
+from ..models import ActionItem, ChatMessage, Meeting, MeetingParticipant, User
 from . import ai
 from .llm import registry
 from .search import top_segments
@@ -46,6 +46,14 @@ def meetings_header(db: Session, limit: int = 20) -> str:
     return "\n".join(f"- {m.title} ({m.started_at:%Y-%m-%d}): {(m.summary.overview if m.summary else 'no notes yet')[:300]}" for m in rows)
 
 
+def my_tasks(db: Session, user: User | None) -> list[ActionItem]:
+    """Open tasks whose assignee is the person the logged-in user is."""
+    if not user or user.person_id is None:
+        return []
+    return list(db.scalars(select(ActionItem).join(MeetingParticipant, ActionItem.assignee_id == MeetingParticipant.id)
+                           .where(MeetingParticipant.person_id == user.person_id, ActionItem.is_done.is_(False))))
+
+
 def cited_line_ids(meeting: Meeting, answer: str) -> list[int]:
     """Lines whose time the answer mentions, e.g. [02:40], so the page can link to them."""
     ids = []
@@ -57,7 +65,7 @@ def cited_line_ids(meeting: Meeting, answer: str) -> list[int]:
     return ids
 
 
-def builtin_answer(db: Session, meeting: Meeting | None, question: str) -> tuple[str, list[int]]:
+def builtin_answer(db: Session, meeting: Meeting | None, question: str, user: User | None = None) -> tuple[str, list[int]]:
     """No AI: recognise 'summary' and 'tasks' questions, otherwise quote the most relevant lines."""
     if SUMMARY_Q.search(question):
         if meeting:
@@ -65,7 +73,8 @@ def builtin_answer(db: Session, meeting: Meeting | None, question: str) -> tuple
         recent = db.scalars(select(Meeting).order_by(Meeting.started_at.desc()).limit(3)).all()
         return "\n".join(f"- {m.title}: {m.summary.overview if m.summary else 'no notes yet'}" for m in recent), []
     if TASKS_Q.search(question):
-        items = meeting.action_items if meeting else db.scalars(select(ActionItem).where(ActionItem.is_done.is_(False)).limit(10)).all()
+        mine = re.search(r"\b(my|mine|me|i)\b", question, re.I) is not None
+        items = meeting.action_items if meeting else my_tasks(db, user) if mine else db.scalars(select(ActionItem).where(ActionItem.is_done.is_(False)).limit(10)).all()
         if not items:
             return "There are no action items.", []
         return "\n".join(
@@ -78,7 +87,7 @@ def builtin_answer(db: Session, meeting: Meeting | None, question: str) -> tuple
     return "Here is what the transcript says:\n" + "\n".join(lines), [s.id for s in hits]
 
 
-def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str | None, model_name: str | None):
+def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str | None, model_name: str | None, user: User | None = None):
     """Answer, store both messages, return (user_message, assistant_message, ai_info).
     Raises ProviderUnavailable (before anything is stored) if the chosen provider is not configured."""
     provider, model = registry.resolve(provider_name, model_name)
@@ -92,7 +101,10 @@ def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str 
             hits = top_segments(db, question, None, limit=20)
             context = f"Meetings, newest first:\n{meetings_header(db)}\n\nRelevant lines:\n" + "\n".join(seg_line(db, s, True) for s in hits)
         chat = "".join(f"{m.role}: {m.content}\n" for m in prior)
-        prompt = f"Transcript:\n{context}\n\n" + (f"Conversation so far:\n{chat}\n" if chat else "") + f"Question: {question}"
+        who = f"The person asking is {user.name}; \"I\", \"me\" and \"my\" mean {user.name}.\n" if user else ""
+        tasks = my_tasks(db, user)
+        mine = f"Open tasks for {user.name}:\n" + "\n".join(f"- {a.text} ({a.meeting.title})" for a in tasks) + "\n\n" if tasks else ""
+        prompt = who + mine + f"Transcript:\n{context}\n\n" + (f"Conversation so far:\n{chat}\n" if chat else "") + f"Question: {question}"
         reply = provider.complete(ASK_SYSTEM, prompt, model).strip()
         if not reply:
             raise ValueError("empty reply")
@@ -100,7 +112,7 @@ def ask(db: Session, meeting: Meeting | None, question: str, provider_name: str 
 
     (answer, source_ids), info = ai.call(
         db, meeting.id if meeting else None, "ask", provider, model,
-        run_llm=run_llm, run_mock=lambda: builtin_answer(db, meeting, question),
+        run_llm=run_llm, run_mock=lambda: builtin_answer(db, meeting, question, user),
     )
     wrote_it = info["provider"] if info["status"] == "ok" else "mock"  # on fallback the built-in logic wrote the answer
     user = ChatMessage(meeting_id=meeting.id if meeting else None, role="user", content=question)

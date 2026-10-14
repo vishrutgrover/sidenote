@@ -5,8 +5,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..db import get_db
-from ..deps import get_meeting
-from ..models import ChatMessage, Meeting, Segment
+from ..deps import current_user, get_meeting
+from ..models import ChatMessage, Meeting, Segment, User
 from ..schemas import AskIn, AskOut, ChatMessageOut, SourceOut
 from ..services import chat
 from ..services.llm.registry import ProviderUnavailable
@@ -24,9 +24,9 @@ def message_out(db: Session, m: ChatMessage) -> ChatMessageOut:
                           provider=m.provider, model=m.model, created_at=m.created_at)
 
 
-def answer(db: Session, meeting: Meeting | None, body: AskIn) -> AskOut:
+def answer(db: Session, meeting: Meeting | None, body: AskIn, user: User) -> AskOut:
     try:
-        user, bot, info = chat.ask(db, meeting, body.question, body.provider, body.model)
+        user, bot, info = chat.ask(db, meeting, body.question, body.provider, body.model, user)
     except ProviderUnavailable as e:
         raise HTTPException(400, str(e)) from None
     return AskOut(user=message_out(db, user), assistant=message_out(db, bot), ai=info)
@@ -44,8 +44,8 @@ def clear(db: Session, meeting: Meeting | None) -> Response:
 
 # one meeting
 @router.post("/meetings/{meeting_id}/ask", response_model=AskOut)
-def ask_meeting(body: AskIn, meeting: Meeting = Depends(get_meeting), db: Session = Depends(get_db)):
-    return answer(db, meeting, body)
+def ask_meeting(body: AskIn, meeting: Meeting = Depends(get_meeting), db: Session = Depends(get_db), user: User = Depends(current_user)):
+    return answer(db, meeting, body, user)
 
 
 @router.get("/meetings/{meeting_id}/chat", response_model=list[ChatMessageOut])
@@ -60,8 +60,8 @@ def clear_meeting_chat(meeting: Meeting = Depends(get_meeting), db: Session = De
 
 # all meetings
 @router.post("/ask", response_model=AskOut)
-def ask_everything(body: AskIn, db: Session = Depends(get_db)):
-    return answer(db, None, body)
+def ask_everything(body: AskIn, db: Session = Depends(get_db), user: User = Depends(current_user)):
+    return answer(db, None, body, user)
 
 
 @router.get("/chat", response_model=list[ChatMessageOut])
