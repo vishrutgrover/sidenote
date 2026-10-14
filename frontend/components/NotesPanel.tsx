@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Check, Copy, Pencil, RefreshCw, Sparkles, Star, X } from "lucide-react";
+import { Check, Copy, Pencil, Plus, RefreshCw, Sparkles, Star, Trash2, X } from "lucide-react";
 import { api, send } from "@/lib/api";
 import { clock } from "@/lib/format";
 import { useFetch } from "@/lib/hooks";
@@ -10,7 +10,7 @@ import { ActionItems } from "./ActionItems";
 import { useToast } from "./Toast";
 import styles from "./NotesPanel.module.css";
 
-type Draft = { overview: string; bullets: Record<number, string> };
+type Draft = { overview: string; bullets: Record<number, string>; removed: number[]; added: Record<number, string[]> }; // added: new points per section id
 
 /** Summary, sectioned notes with clickable moments, and action items. Notes can be edited or rewritten. */
 export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting: Meeting; items: ActionItem[]; onItemsChanged: () => void; onSeek: (sec: number) => void }) {
@@ -23,7 +23,10 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
   if (error && !summary) return <p className="empty">{error}</p>;
   if (!summary) return <div className="skeleton" style={{ height: 240 }} />;
 
-  const startEdit = () => setDraft({ overview: summary.overview, bullets: Object.fromEntries(summary.sections.flatMap((s) => s.bullets.map((b) => [b.id, b.text]))) });
+  const startEdit = () => setDraft({ overview: summary.overview, bullets: Object.fromEntries(summary.sections.flatMap((s) => s.bullets.map((b) => [b.id, b.text]))), removed: [], added: {} });
+
+  const setAdded = (sectionId: number, change: (list: string[]) => string[]) =>
+    setDraft((d) => d && { ...d, added: { ...d.added, [sectionId]: change(d.added[sectionId] ?? []) } });
 
   async function save() {
     if (!draft || !summary) return;
@@ -31,8 +34,15 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
     try {
       if (draft.overview.trim() !== summary.overview) await api(`/api/meetings/${meeting.id}/summary`, send("PATCH", { overview: draft.overview }));
       for (const b of summary.sections.flatMap((s) => s.bullets)) {
+        if (draft.removed.includes(b.id)) {
+          await api(`/api/note-bullets/${b.id}`, send("DELETE"));
+          continue;
+        }
         const text = draft.bullets[b.id]?.trim();
         if (text && text !== b.text) await api(`/api/note-bullets/${b.id}`, send("PATCH", { text }));
+      }
+      for (const [sectionId, texts] of Object.entries(draft.added)) {
+        for (const text of texts.map((t) => t.trim()).filter(Boolean)) await api(`/api/note-sections/${sectionId}/bullets`, send("POST", { text }));
       }
       setDraft(null);
       reload();
@@ -102,10 +112,13 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
         <section key={s.id} className={styles.section}>
           <h3>{s.title}</h3>
           <ul>
-            {s.bullets.map((b) => (
+            {s.bullets.filter((b) => !draft?.removed.includes(b.id)).map((b) => (
               <li key={b.id}>
                 {draft ? (
-                  <input className="input" value={draft.bullets[b.id] ?? ""} onChange={(e) => setDraft({ ...draft, bullets: { ...draft.bullets, [b.id]: e.target.value } })} aria-label={`Note: ${b.text}`} />
+                  <span className={styles.edit}>
+                    <input className="input" value={draft.bullets[b.id] ?? ""} onChange={(e) => setDraft({ ...draft, bullets: { ...draft.bullets, [b.id]: e.target.value } })} aria-label={`Note: ${b.text}`} />
+                    <button className="btn btn-ghost btn-icon" onClick={() => setDraft({ ...draft, removed: [...draft.removed, b.id] })} aria-label={`Delete note: ${b.text}`} title="Delete this point"><Trash2 size={14} /></button>
+                  </span>
                 ) : (
                   <>
                     {b.text}{" "}
@@ -116,7 +129,16 @@ export function NotesPanel({ meeting, items, onItemsChanged, onSeek }: { meeting
                 )}
               </li>
             ))}
+            {draft?.added[s.id]?.map((text, i) => (
+              <li key={`new${i}`}>
+                <span className={styles.edit}>
+                  <input className="input" autoFocus value={text} placeholder="New point" onChange={(e) => setAdded(s.id, (list) => list.map((t, k) => (k === i ? e.target.value : t)))} aria-label="New point" />
+                  <button className="btn btn-ghost btn-icon" onClick={() => setAdded(s.id, (list) => list.filter((_, k) => k !== i))} aria-label="Remove new point" title="Remove"><X size={14} /></button>
+                </span>
+              </li>
+            ))}
           </ul>
+          {draft && <button className="btn btn-ghost" onClick={() => setAdded(s.id, (list) => [...list, ""])}><Plus size={14} /> Add point</button>}
         </section>
       ))}
 

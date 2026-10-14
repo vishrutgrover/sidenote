@@ -255,6 +255,20 @@ describe("NotesPanel", () => {
       expect(writes.map((w) => [w.path, w.body])).toEqual([["/api/meetings/1/summary", { overview: "A new overview." }], ["/api/note-bullets/11", { text: "Ship on Thursday" }]]);
     });
 
+    it("adds a new point to a section and deletes another", async () => {
+      const { calls } = setup({ "/api/meetings/1/summary": () => summary, "/api/note-bullets/": null, "/api/note-sections/": { id: 99 } });
+      await loaded();
+      fireEvent.click(screen.getByRole("button", { name: /Edit/ }));
+      fireEvent.click(screen.getAllByRole("button", { name: /Add point/ })[0]);
+      fireEvent.change(screen.getByLabelText("New point"), { target: { value: "Review on Monday" } });
+      fireEvent.click(screen.getByRole("button", { name: "Delete note: Budget is tight" }));
+      expect(screen.queryByLabelText("Note: Budget is tight")).toBeNull();
+      fireEvent.click(screen.getByRole("button", { name: /Save/ }));
+      expect(await screen.findByText("Notes saved")).toBeInTheDocument();
+      const writes = calls.requests!.filter((r) => r.method !== "GET").map((w) => [w.method, w.path, w.body]);
+      expect(writes).toEqual([["DELETE", "/api/note-bullets/12", undefined], ["POST", "/api/note-sections/1/bullets", { text: "Review on Monday" }]]);
+    });
+
     it("saving without changes sends nothing", async () => {
       const { calls } = setup();
       await loaded();

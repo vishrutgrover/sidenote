@@ -37,6 +37,17 @@ def test_edit_overview_and_bullet(client):
     assert client.get(f"/api/meetings/{m['id']}/summary").json()["sections"][0]["bullets"][0]["text"] == "Edited"
 
 
+def test_add_and_delete_a_point(client):
+    m = meeting(client)
+    section = client.get(f"/api/meetings/{m['id']}/summary").json()["sections"][0]
+    r = client.post(f"/api/note-sections/{section['id']}/bullets", json={"text": "  Added by hand  "})
+    assert r.status_code == 201 and r.json()["text"] == "Added by hand" and r.json()["timestamp_sec"] is None
+    after = client.get(f"/api/meetings/{m['id']}/summary").json()["sections"][0]["bullets"]
+    assert [b["text"] for b in after][-1] == "Added by hand" and len(after) == len(section["bullets"]) + 1
+    assert client.delete(f"/api/note-bullets/{r.json()['id']}").status_code == 204
+    assert len(client.get(f"/api/meetings/{m['id']}/summary").json()["sections"][0]["bullets"]) == len(section["bullets"])
+
+
 def test_overview_can_be_written_for_a_meeting_that_had_none(client):
     from app.db import SessionLocal
     from app.models import Summary
@@ -61,6 +72,8 @@ def test_invalid_note_edits_are_rejected(client, url, body):
 
 def test_missing_bullet_and_meeting_are_404(client):
     assert client.patch("/api/note-bullets/99999", json={"text": "x"}).status_code == 404
+    assert client.delete("/api/note-bullets/99999").status_code == 404
+    assert client.post("/api/note-sections/99999/bullets", json={"text": "x"}).status_code == 404
     assert client.get("/api/meetings/999/summary").status_code == 404
     assert client.get("/api/meetings/999/insights").status_code == 404
 

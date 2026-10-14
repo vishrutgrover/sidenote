@@ -87,3 +87,11 @@
     transform: rotate(360deg);
   }
 }
+.edit {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.edit :global(.input) {
+  flex: 1;
+}

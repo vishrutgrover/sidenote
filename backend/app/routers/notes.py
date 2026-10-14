@@ -1,11 +1,11 @@
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from ..db import get_db
 from ..deps import get_meeting
-from ..models import Meeting, NoteBullet, Summary
+from ..models import Meeting, NoteBullet, NoteSection, Summary
 from ..schemas import AiChoice, BulletOut, BulletUpdate, RegenerateOut, SummaryOut, SummaryUpdate
 from ..services import ai, insights
 from ..services.llm.registry import ProviderUnavailable
@@ -55,6 +55,28 @@ def edit_bullet(bullet_id: int, body: BulletUpdate, db: Session = Depends(get_db
     bullet.text = body.text
     db.commit()
     return bullet
+
+
+@router.post("/note-sections/{section_id}/bullets", response_model=BulletOut, status_code=201)
+def add_bullet(section_id: int, body: BulletUpdate, db: Session = Depends(get_db)):
+    """A new point at the end of a section. It has no timestamp: it was written by hand, not taken from a line."""
+    section = db.get(NoteSection, section_id)
+    if not section:
+        raise HTTPException(404, "Section not found")
+    bullet = NoteBullet(section_id=section.id, text=body.text, position=max((b.position for b in section.bullets), default=-1) + 1)
+    db.add(bullet)
+    db.commit()
+    return bullet
+
+
+@router.delete("/note-bullets/{bullet_id}", status_code=204)
+def delete_bullet(bullet_id: int, db: Session = Depends(get_db)):
+    bullet = db.get(NoteBullet, bullet_id)
+    if not bullet:
+        raise HTTPException(404, "Note not found")
+    db.delete(bullet)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/meetings/{meeting_id}/insights")
